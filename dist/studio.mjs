@@ -1,6 +1,6 @@
 import { STYLES } from './music-ir.mjs';
 import { demos, suggestDemo } from './demos.mjs';
-import { getPastedUrl, resolveSource, loadAudio, loadFile, resolveCommonsAudio, sliceAudio, youtubeMetadata } from './sources.mjs';
+import { getPastedUrl, resolveSource, loadAudio, loadFile, resolveCommonsAudio, sliceAudio, youtubeMetadata } from './sources.mjs?v=20261107';
 
 const themes = {
   christmas: ['冬の音楽郵便', 'チェレスタ、スレイベル、あたたかな弦', '収録曲'],
