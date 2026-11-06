@@ -98,6 +98,9 @@ test('catalog, direct audio and YouTube links are classified separately', () => 
   assert.equal(linked.catalogId, 'ode-to-joy');
   assert.equal(resolveSource('https://youtu.be/B8FMRYNQ0O0', base).catalogId, 'greensleeves');
   assert.equal(resolveSource('https://music.youtube.com/watch?v=zg63AEw-PCg', base).catalogId, 'auld-lang-syne');
+  assert.equal(resolveSource('https://youtu.be/dQw4w9WgXcQ?t=1m9s', base).offset, 69);
+  assert.equal(resolveSource('https://music.youtube.com/watch?v=dQw4w9WgXcQ&start=55', base).offset, 55);
+  assert.equal(resolveSource('https://youtu.be/dQw4w9WgXcQ?t=unknown', base).offset, 0);
   assert.equal(linked.watchUrl, 'https://music.youtube.com/watch?v=nl3-k5GfYlw');
   assert.equal(suggestDemo('Frère Jacques (Instrumental)'), 'frere-jacques');
   assert.equal(suggestDemo('Jingle Bells Rock'), null);

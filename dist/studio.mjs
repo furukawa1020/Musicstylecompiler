@@ -1,6 +1,6 @@
-import { STYLES } from './music-ir.mjs?v=score-2';
-import { demos, suggestDemo, suggestRecording } from './demos.mjs?v=score-2';
-import { getPastedUrl, resolveSource, linkedRecording, loadAudio, loadFile, resolveCommonsAudio, sliceAudio, youtubeMetadata } from './sources.mjs?v=score-2';
+import { STYLES } from './music-ir.mjs?v=local-yt-1';
+import { demos, suggestDemo, suggestRecording } from './demos.mjs?v=local-yt-1';
+import { getPastedUrl, resolveSource, linkedRecording, loadAudio, loadFile, loadYouTubeClip, resolveCommonsAudio, sliceAudio, youtubeMetadata } from './sources.mjs?v=local-yt-1';
 
 const stages = ['analyzing', 'transcribing', 'arranging', 'rendering'];
 const statusText = {
@@ -39,8 +39,13 @@ const duration = seconds => {
   return Math.floor(n / 60) + ':' + String(n % 60).padStart(2, '0');
 };
 
-const catalogId = item => item?.kind === 'demo' ? item.id : item?.catalogId;
-const canCompile = item => Boolean(catalogId(item) || item?.recordingId) || item?.kind === 'audio' || item?.kind === 'commons' || item?.kind === 'file';
+const localYouTube = location.hostname === '127.0.0.1' &&
+  document.querySelector('meta[name="music-style-input"]')?.content === 'local-youtube';
+
+if (localYouTube) $('youtube-input-note').textContent = 'ローカル版 / YouTubeリンク先の録音から編曲';
+const exactYouTube = item => localYouTube && item?.kind === 'youtube' && !item.suggested;
+const catalogId = item => item?.kind === 'demo' ? item.id : exactYouTube(item) ? null : item?.catalogId;
+const canCompile = item => exactYouTube(item) || Boolean(catalogId(item) || item?.recordingId) || item?.kind === 'audio' || item?.kind === 'commons' || item?.kind === 'file';
 
 function updateControls() {
   $('compile').disabled = !canCompile(source) || Boolean(run);
@@ -125,6 +130,7 @@ function setSource(next) {
   jobStatus('idle');
   sourceStatus();
   source = next;
+  $('local-youtube-help').hidden = localYouTube || next?.kind !== 'youtube';
   decoded = null;
   commonsLicense = null;
   suggestedSource = null;
@@ -140,7 +146,8 @@ function setSource(next) {
   for (const [id, button] of demoButtons) button.setAttribute('aria-pressed', String(catalogId(next) === id));
 
   const demo = demos[catalogId(next)];
-  const recording = linkedRecording(next?.recordingId);
+  const exact = exactYouTube(next);
+  const recording = exact ? null : linkedRecording(next?.recordingId);
   if (demo) {
     $('track-title').textContent = demo.title;
     $('track-meta').textContent = demo.credit + ' / ' + duration(demo.duration) + ' / 収録音源';
@@ -158,16 +165,19 @@ function setSource(next) {
     if (next.kind === 'file') sourceStatus('音源は端末から送信されません。');
   } else if (next?.kind === 'youtube') {
     $('track-title').textContent = 'YouTube の曲';
-    $('track-meta').textContent = 'リンクの曲情報を読み込み中…';
+    $('track-meta').textContent = exact ? 'リンク先の録音 / 最長30秒' : 'リンクの曲情報を読み込み中…';
   }
 
   if (next?.kind === 'youtube') {
     $('watch-link').href = next.watchUrl;
     $('youtube-preview').hidden = false;
-    if (demo) sourceStatus('同じ曲の収録音源で編曲します。リンク先とは別の演奏です。');
+    if (exact) {
+      const start = next.offset ? ' / ' + duration(next.offset) + 'から' : '';
+      sourceStatus('リンク先の録音を取得して編曲します' + start + '。');
+    } else if (demo) sourceStatus('同じ曲の収録音源で編曲します。リンク先とは別の演奏です。');
     else if (recording) sourceStatus('同じ曲のWikimedia Commons音源で編曲します。リンク先とは別の演奏です。');
     else {
-      sourceStatus('このリンクで編曲に使える音源を確認できません。リンク元の試聴はできます。');
+      sourceStatus('リンク先の録音を編曲するにはPC版をご利用ください。');
       metadata = new AbortController();
       const current = metadata;
       const timer = setTimeout(() => current.abort(), 5000);
@@ -246,7 +256,7 @@ function showResult(result, style, start, playOnReady) {
   const ir = result.diagnostic.source;
   const bpm = ir.tempo_map[0];
   $('player-style').textContent = STYLES[style].label;
-  $('original-label').textContent = catalogId(source) ? '収録音源' : '入力音源';
+  $('original-label').textContent = exactYouTube(source) ? 'リンク先の録音' : catalogId(source) ? '収録音源' : '入力音源';
   $('result').hidden = false;
   $('result').open = true;
   chooseMix('arranged');
@@ -289,15 +299,16 @@ async function startCompile(playOnReady = false) {
       const provenance = next.kind === 'youtube' ? youtubeProvenance(next) : {};
       payload = { demo: id, source: { id, provider: 'catalog', license_ref: 'CC0-1.0', ...provenance }, style };
     } else {
+      const exact = exactYouTube(next);
       const local = next.kind === 'file';
-      const linked = linkedRecording(next.recordingId);
+      const linked = exact ? null : linkedRecording(next.recordingId);
       const commons = next.kind === 'commons' ? next : linked;
       if (!decoded) {
-        jobStatus('queued', local ? '端末の音声を開いています…' : 'URLから音声を読み込み中…');
-        task.timeout = setTimeout(() => fail('音声の読み込みが時間切れになりました。短い音声で再試行してください。'), 24000);
+        jobStatus('queued', exact ? 'YouTubeから指定区間の音声を取得中…' : local ? '端末の音声を開いています…' : 'URLから音声を読み込み中…');
+        task.timeout = setTimeout(() => fail('音声の読み込みが時間切れになりました。短い音声で再試行してください。'), exact ? 65000 : 24000);
         const signal = task.controller.signal;
         const remote = commons ? await resolveCommonsAudio(commons, signal) : next;
-        const buffer = await (local ? loadFile(next.file, signal) : loadAudio(remote, signal));
+        const buffer = await (exact ? loadYouTubeClip(next, signal) : local ? loadFile(next.file, signal) : loadAudio(remote, signal));
         clearTimeout(task.timeout);
         if (run !== task) return;
         decoded = buffer;
@@ -308,14 +319,14 @@ async function startCompile(playOnReady = false) {
         updateClip();
       }
       const data = sliceAudio(decoded, clipStart.value);
-      const provider = local ? 'local-file' : commons ? 'wikimedia-commons' : 'direct-audio';
+      const provider = exact ? 'youtube-local' : local ? 'local-file' : commons ? 'wikimedia-commons' : 'direct-audio';
       payload = { channels: data.channels, rate: data.rate,
-        source: { id: provider, provider, offset_sec: data.offset_sec,
+        source: { id: provider, provider, offset_sec: exact ? next.offset : data.offset_sec,
           ...(commons ? { license_ref: commonsLicense, public_source_url: commons.url } : {}),
-          ...(linked ? youtubeProvenance(next) : {}) }, style };
+          ...(linked || exact ? youtubeProvenance(next) : {}) }, style };
     }
     if (run !== task) return;
-    const worker = new Worker(new URL('./compiler-worker.mjs?v=score-2', import.meta.url), { type: 'module' });
+    const worker = new Worker(new URL('./compiler-worker.mjs?v=local-yt-1', import.meta.url), { type: 'module' });
     task.worker = worker;
     task.timeout = setTimeout(() => fail('編曲が時間切れになりました。短い音声で再試行してください。'), 45000);
     worker.onmessage = ({ data }) => {

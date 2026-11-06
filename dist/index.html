@@ -7,8 +7,8 @@
   <meta name="theme-color" content="#123e32">
   <meta name="referrer" content="strict-origin-when-cross-origin">
   <title>Music Style Compiler</title>
-  <link rel="stylesheet" href="./studio.css?v=score-2">
-  <script type="module" src="./studio.mjs?v=score-2"></script>
+  <link rel="stylesheet" href="./studio.css?v=local-yt-1">
+  <script type="module" src="./studio.mjs?v=local-yt-1"></script>
 </head>
 <body>
   <svg class="symbols" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
@@ -70,6 +70,7 @@
                 </div>
               </div>
               <p id="source-message" role="status" class="source-message"></p>
+              <p id="local-youtube-help" class="hint" hidden><a href="https://github.com/furukawa1020/Musicstylecompiler#youtubeのリンク先の録音をpcで編曲する">リンク先の録音を編曲するPC版</a></p>
               <button type="button" id="suggestion" class="text-button" hidden></button>
               <details id="youtube-preview" hidden><summary>リンク元の演奏をプレビュー</summary><div id="youtube-frame"></div></details>
               <div id="clip-panel" class="clip-panel" hidden>
@@ -114,6 +115,6 @@
       </div>
     </section>
   </main>
-  <footer class="footer"><div class="shell footer-inner"><span>MUSIC STYLE COMPILER</span><span>YouTubeリンクは同じ曲の別音源で編曲できます（対応曲のみ）。</span></div></footer>
+  <footer class="footer"><div class="shell footer-inner"><span>MUSIC STYLE COMPILER</span><span id="youtube-input-note">対応するYouTubeリンクは、同じ曲の別音源で編曲します。</span></div></footer>
 </body>
 </html>

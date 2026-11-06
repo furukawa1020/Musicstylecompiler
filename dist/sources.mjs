@@ -1,5 +1,5 @@
-import { demos, linkedRecordings, youtubeCatalog, youtubeRecordings } from './demos.mjs?v=score-2';
-import { MAX_SECONDS } from './music-ir.mjs?v=score-2';
+import { demos, linkedRecordings, youtubeCatalog, youtubeRecordings } from './demos.mjs?v=local-yt-1';
+import { MAX_SECONDS } from './music-ir.mjs?v=local-yt-1';
 
 const youtubeHosts = new Set(['youtube.com', 'www.youtube.com', 'm.youtube.com', 'music.youtube.com', 'youtu.be',
   'www.youtu.be', 'youtube-nocookie.com', 'www.youtube-nocookie.com']);
@@ -11,6 +11,14 @@ const maxDuration = 8 * 60;
 export function getPastedUrl(value) {
   const matches = value.match(/https?:\/\/[^\s<>"「」]+/gi);
   return matches?.length === 1 ? matches[0] : null;
+}
+
+function youtubeOffset(value) {
+  if (/^\d+$/.test(value ?? '')) return Math.min(Number(value), 8 * 60 * 60);
+  const match = /^(?:(\d+)h)?(?:(\d+)m)?(?:(\d+)s)?$/.exec(value ?? '');
+  if (!match) return 0;
+  const [, hours = 0, minutes = 0, seconds = 0] = match;
+  return Math.min(Number(hours) * 3600 + Number(minutes) * 60 + Number(seconds), 8 * 60 * 60);
 }
 
 export function resolveSource(value, base) {
@@ -33,7 +41,8 @@ export function resolveSource(value, base) {
     const id = host.endsWith('youtu.be') ? route : route === 'watch' ? url.searchParams.get('v')
       : ['shorts', 'embed', 'live'].includes(route) ? segment : null;
     if (!id || !/^[\w-]{11}$/.test(id)) throw new Error('アルバムやプレイリストでは、曲を開いてから「共有」で1曲のURLをコピーしてください。');
-    return { kind: 'youtube', id, url: 'https://www.youtube.com/watch?v=' + id,
+    const offset = youtubeOffset(url.searchParams.get('t') ?? url.searchParams.get('start'));
+    return { kind: 'youtube', id, offset, url: 'https://www.youtube.com/watch?v=' + id,
       watchUrl: host === 'music.youtube.com' ? 'https://music.youtube.com/watch?v=' + id : 'https://www.youtube.com/watch?v=' + id,
       catalogId: Object.hasOwn(youtubeCatalog, id) ? youtubeCatalog[id] : null,
       recordingId: Object.hasOwn(youtubeRecordings, id) ? youtubeRecordings[id] : null };
@@ -170,6 +179,28 @@ export function sliceAudio(buffer, start) {
   const to = Math.min(buffer.length, from + MAX_SECONDS * rate);
   const channels = Array.from({ length: Math.min(2, buffer.numberOfChannels) }, (_, i) => buffer.getChannelData(i).slice(from, to));
   return { channels, rate, offset_sec: from / rate };
+}
+
+export async function loadYouTubeClip(source, signal) {
+  const messages = {
+    timeout: 'YouTube音声の取得が時間切れになりました。',
+    unavailable: 'リンク先の音声を取得できませんでした。URLと公開状態を確認し、yt-dlpを最新版に更新してください。',
+    'invalid-audio': 'この区間から2秒以上の音声を読み込めませんでした。開始位置を確認してください。',
+    busy: '前の音声取得が終了してからもう一度お試しください。',
+  };
+  const endpoint = new URL('./api/youtube-clip', location.href);
+  const response = await fetch(endpoint, {
+    method: 'POST', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ id: source.id, offset: source.offset ?? 0 }),
+    signal, credentials: 'same-origin', redirect: 'error',
+  });
+  if (!response.ok) {
+    const result = await response.json().catch(() => ({}));
+    throw new Error(messages[result.error] ?? 'ローカル版の音声取得処理を確認してください。');
+  }
+  if (response.headers.get('content-type') !== 'audio/wav') throw new Error('ローカル版から音声が返りませんでした。');
+  const data = await response.blob();
+  return loadFile(data, signal);
 }
 
 export async function youtubeMetadata(source, signal) {
