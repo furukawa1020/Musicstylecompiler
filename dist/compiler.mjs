@@ -1,5 +1,5 @@
-import { STYLES, TPQ } from './music-ir.mjs?v=score-2';
-import { demos, demoNotes } from './demos.mjs?v=score-2';
+import { STYLES, TPQ } from './music-ir.mjs?v=local-yt-1';
+import { demos, demoNotes } from './demos.mjs?v=local-yt-1';
 
 const instruments = ['dry-piano', 'demo-keys', 'celesta', 'pulse', 'reed', 'violin', 'strings', 'pizz',
   'sleigh', 'soft-keys', 'bell', 'arp', 'triangle', 'chip-kick', 'chip-noise', 'jazz-keys', 'upright',

@@ -10,13 +10,28 @@ python3 -m http.server 8000 --directory dist
 
 [localhost:8000](http://localhost:8000) を開き、スタイルと曲を選びます。出力は同じ位置でA/B試聴でき、WAV、MIDI、Music IRと処理時間を保存できます。
 
-- **YouTube Music / YouTube** — 曲の共有URLを貼り付けると、対応する18の動画IDでは、同じ曲の収録音源またはWikimedia Commonsの別演奏ですぐに編曲します。YouTubeの演奏は別の公式プレーヤーで試聴できます。未登録のIDではメタデータから同じ曲の音源候補を提案できる場合があります。任意のYouTube音声の抽出・加工は行いません。
+- **YouTube Music / YouTube** — 曲の共有URLを貼り付けると、対応する18の動画IDでは、同じ曲の収録音源またはWikimedia Commonsの別演奏ですぐに編曲します。YouTubeの演奏は別の公式プレーヤーで試聴できます。未登録のIDではメタデータから同じ曲の音源候補を提案できる場合があります。リンク先の録音で編曲する場合は、下記のPC版を利用します。
 - **直接音声URL** — 利用可能な音声ファイルの直リンクを貼り付けます。HTTPS、CORS対応、リダイレクトなし、最大12 MiB。曲の登録は不要です。入力欄の「公開音源で試す」には [Keynata CommonsのCC0 J-POPインスト](https://carf-coder.github.io/keynata-commons/) の直リンクもあります。
 - **Wikimedia Commons** — CC0またはパブリックドメインと表示される音声のファイルページを貼り付けます。
 - **端末内の音声** — ファイル選択またはドロップで編曲します。最大32 MiB。ファイルはブラウザから送信されません。
 - **収録曲** — 10曲の収録音源はアプリ内で合成します。個別URLは曲を選ぶとコピーできます。
 
 音声ファイルは最大8分まで読み込み、選んだ開始位置から最長30秒を処理します。WAV、MP3、M4A、Ogg等はブラウザのデコード対応に依存します。外部音源の利用・編曲・出力の扱いは適用される利用条件に従ってください。
+
+## YouTubeのリンク先の録音をPCで編曲する
+
+Python 3.9以上とFFmpegが必要です。yt-dlpのYouTube対応にはJavaScriptランタイムも必要になるため、Node.js 22以上を利用できます。
+
+```sh
+git clone https://github.com/furukawa1020/Musicstylecompiler.git
+cd Musicstylecompiler
+python -m pip install -U "yt-dlp[default]"
+python tools/youtube_studio.py
+```
+
+[PC版を開く](http://127.0.0.1:8765/) → スタイルを選ぶ → YouTubeまたはYouTube Musicの曲のURLを貼る。指定された録音の先頭から最長30秒を自動で編曲します。たとえば共有URLに `&t=90s` が含まれる場合は1:30から処理します。公開版の登録曲IDが入力されても、PC版はリンク先の録音を使います。
+
+PC版の取得処理は起動したPCのループバックで実行します。ブラウザへ渡した録音はメモリで処理し、取得時の作業ファイルは処理終了時に消去します。視聴制限や取得元の制限によって処理できないリンクがあります。録音の取得・編曲が許可されている音源で利用してください。GitHub PagesはPC版の取得処理を実行できません。
 
 ## 変換の範囲
 
