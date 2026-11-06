@@ -1,11 +1,16 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { createHash } from 'node:crypto';
-import { compile } from '../dist/compiler.mjs';
+import { readFile } from 'node:fs/promises';
+import { createCompiler } from '../dist/compiler.mjs';
 import { demos, suggestDemo } from '../dist/demos.mjs';
-import { STYLES, analyze, validate } from '../dist/music-ir.mjs';
+import { STYLES, validate } from '../dist/music-ir.mjs';
 import { getPastedUrl, loadAudio, resolveSource, resolveCommonsAudio, sliceAudio } from '../dist/sources.mjs';
 
+const binary = await readFile(new URL('../dist/music-compiler.wasm', import.meta.url));
+const { instance, module } = await WebAssembly.instantiate(binary);
+assert.deepEqual(WebAssembly.Module.imports(module), []);
+const compile = createCompiler(instance);
 const decoder = new TextDecoder();
 const fingerprint = buffer => createHash('sha256').update(Buffer.from(buffer)).digest('hex');
 
@@ -42,7 +47,7 @@ for (const [id, demo] of Object.entries(demos)) {
         assert.ok(source.tracks[0].notes.length >= 18);
         assert.deepEqual(source.tracks[0].notes.slice(0, 4).map(note => note.pitch), demo.score.slice(0, 4).map(([pitch]) => pitch));
       }
-      assert.deepEqual(arrangement.tracks[0].notes, source.tracks[0].notes);
+      assert.deepEqual(arrangement.tracks[0].notes.map(n => n.pitch), source.tracks[0].notes.map(n => n.pitch));
       assert.deepEqual(arrangement.sections, source.sections);
       assert.equal(arrangement.tracks[0].instrument, STYLES[style].lead);
       assert.ok(arrangement.tracks.length >= 4);
@@ -62,7 +67,7 @@ for (const [id, demo] of Object.entries(demos)) {
 }
 
 test('silence fails before arrangement', () => {
-  assert.throws(() => analyze(new Float32Array(24000), 24000), /無音/);
+  assert.throws(() => compile({ channels: [new Float32Array(24000)], rate: 24000, source: {}, style: 'christmas' }), /無音/);
 });
 
 test('catalog, direct audio and YouTube links are classified separately', () => {
@@ -78,6 +83,8 @@ test('catalog, direct audio and YouTube links are classified separately', () => 
   }
   const linked = resolveSource('https://music.youtube.com/watch?v=nl3-k5GfYlw&si=tracking', base);
   assert.equal(linked.catalogId, 'ode-to-joy');
+  assert.equal(resolveSource('https://youtu.be/B8FMRYNQ0O0', base).catalogId, 'greensleeves');
+  assert.equal(resolveSource('https://music.youtube.com/watch?v=zg63AEw-PCg', base).catalogId, 'auld-lang-syne');
   assert.equal(linked.watchUrl, 'https://music.youtube.com/watch?v=nl3-k5GfYlw');
   assert.equal(suggestDemo('Frère Jacques (Instrumental)'), 'frere-jacques');
   assert.equal(suggestDemo('Jingle Bells Rock'), null);
@@ -121,7 +128,7 @@ test('an unregistered PCM melody with quiet accompaniment compiles by pitch', ()
   }
   const result = compile({ channels: [samples], rate, source: { id: 'external-test' }, style: 'jazz' });
   assert.deepEqual(result.diagnostic.source.tracks[0].notes.map(note => note.pitch), pitches);
-  assert.deepEqual(result.diagnostic.arrangement.tracks[0].notes, result.diagnostic.source.tracks[0].notes);
+  assert.deepEqual(result.diagnostic.arrangement.tracks[0].notes.map(n => n.pitch), pitches);
   checkWav(result.arranged, 5);
 });
 
@@ -172,4 +179,17 @@ test('paste accepts a single shared URL with optional track text', () => {
   assert.equal(getPastedUrl('エリーゼのために\n<' + url + '>'), url);
   assert.equal(getPastedUrl(url + '\nhttps://example.com/other.ogg'), null);
   assert.equal(getPastedUrl('javascript:alert(1)'), null);
+});
+
+test('styles change groove, articulation and instrumentation in the Wasm score', () => {
+  const melody = style => compile({ demo: 'winter-postcard', source: { id: 'test' }, style }).diagnostic;
+  const jazz = melody('jazz');
+  const chip = melody('chip');
+  const christmas = melody('christmas');
+  const classical = melody('classical');
+  assert.ok(jazz.arrangement.tracks[0].notes.some((n, i) => n.start_tick > jazz.source.tracks[0].notes[i].start_tick));
+  assert.ok(chip.arrangement.tracks[0].notes.some((n, i) => n.duration_ticks < chip.source.tracks[0].notes[i].duration_ticks));
+  assert.ok(classical.arrangement.tracks[0].notes.some((n, i) => n.duration_ticks > classical.source.tracks[0].notes[i].duration_ticks));
+  assert.ok(christmas.arrangement.tracks.find(t => t.instrument === 'sleigh').notes.length > 60);
+  assert.ok(christmas.arrangement.tracks.find(t => t.instrument === 'bell').notes.length > 12);
 });

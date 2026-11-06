@@ -7,8 +7,8 @@
   <meta name="theme-color" content="#123e32">
   <meta name="referrer" content="strict-origin-when-cross-origin">
   <title>Music Style Compiler</title>
-  <link rel="stylesheet" href="./studio.css?v=20261107">
-  <script type="module" src="./studio.mjs?v=20261107"></script>
+  <link rel="stylesheet" href="./studio.css?v=moon-1">
+  <script type="module" src="./studio.mjs?v=moon-1"></script>
 </head>
 <body>
   <svg class="symbols" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
@@ -22,7 +22,7 @@
   <header class="masthead">
     <div class="shell masthead-inner">
       <a class="brand" href="./" aria-label="Music Style Compiler ホーム"><svg aria-hidden="true"><use href="#icon-logo"/></svg><span>Music Style Compiler</span></a>
-      <span class="edition">音源はこの端末で処理</span>
+      <span class="edition">MoonBit / Wasm · 端末内処理</span>
     </div>
     <nav class="shell preset-bar" aria-label="編曲スタイル">
       <div class="style-buttons" role="group" aria-label="スタイルを選ぶ">
@@ -38,7 +38,6 @@
     <section class="intro" aria-labelledby="headline">
       <div class="shell hero-body">
         <div class="intro-type">
-          <span class="hero-kicker" id="hero-kicker">冬の音楽郵便</span>
           <h1 id="headline">Christmas</h1>
           <p class="hero-copy" id="hero-copy">チェレスタ、スレイベル、あたたかな弦</p>
         </div>
@@ -48,54 +47,65 @@
 
     <section class="workbench" aria-label="編曲スタジオ">
       <div class="shell workbench-inner">
-        <section class="source-panel" aria-labelledby="source-heading">
-          <h2 id="source-heading">曲のURLを貼る</h2>
-          <form id="source-form">
-            <label for="source-url">音源のURL</label>
-            <div class="url-row">
-              <input type="url" id="source-url" name="source" placeholder="音声ファイルやWikimedia CommonsのURL" spellcheck="false" autocomplete="off" maxlength="2000" required>
-              <button type="submit" class="sub-button">読込</button>
-            </div>
-            <p class="hint">音声ファイルの直リンクや、Wikimedia Commonsの対応音声ページを貼ると編曲が始まります。</p>
-          </form>
-          <div class="url-examples"><span>公開音源で試す</span><div id="public-examples"></div></div>
-          <div class="source-tools">
-            <label for="audio-file" id="file-picker" class="file-picker">端末の音声を選ぶ<input id="audio-file" type="file" accept="audio/*,.mp3,.wav,.m4a,.ogg,.flac,.aac,.opus,.aif,.aiff"></label>
-            <details class="examples"><summary>YouTube Musicの対応例</summary><div id="example-links"></div></details>
-          </div>
-          <div id="source-details" class="source-details" hidden>
-            <div class="source-meta"><strong id="track-title"></strong><span id="track-meta"></span></div>
-            <div class="source-actions">
-              <a id="watch-link" target="_blank" rel="noopener noreferrer" hidden>リンク元 ↗</a>
-              <button type="button" id="copy-link" class="text-button" hidden>曲のリンクをコピー</button>
-            </div>
-          </div>
-          <p id="source-message" role="status" class="source-message"></p>
-          <button type="button" id="suggestion" class="text-button" hidden></button>
-          <details id="youtube-preview" hidden><summary>リンク元の演奏をプレビュー</summary><div id="youtube-frame"></div></details>
-          <div id="clip-panel" class="clip-panel" hidden>
-            <label for="clip-start">編曲の開始位置</label><output id="clip-time" for="clip-start"></output>
-            <input id="clip-start" type="range" min="0" value="0" step="1" aria-describedby="clip-time">
-          </div>
-        </section>
+        <details id="source-depth" class="depth-panel" open>
+          <summary id="source-heading">曲のURLを貼る</summary>
+          <div class="depth-content">
+            <section class="source-panel" aria-labelledby="source-heading">
+              <form id="source-form">
+                <label for="source-url">音源のURL</label>
+                <div class="url-row">
+                  <input type="url" id="source-url" name="source" placeholder="音声ファイルやWikimedia CommonsのURL" spellcheck="false" autocomplete="off" maxlength="2000" required>
+                  <button type="submit" class="sub-button">読込</button>
+                </div>
+                <p class="hint">音声ファイルの直リンクや、Wikimedia Commonsの対応音声ページを貼ると編曲が始まります。</p>
+              </form>
+              <div class="url-examples"><span>公開音源で試す</span><div id="public-examples"></div></div>
+              <div class="source-tools">
+                <label for="audio-file" id="file-picker" class="file-picker">端末の音声を選ぶ<input id="audio-file" type="file" accept="audio/*,.mp3,.wav,.m4a,.ogg,.flac,.aac,.opus,.aif,.aiff"></label>
+                <details class="examples"><summary>YouTube / YouTube Musicの対応例</summary><div id="example-links"></div></details>
+              </div>
+              <div id="source-details" class="source-details" hidden>
+                <div class="source-meta"><strong id="track-title"></strong><span id="track-meta"></span></div>
+                <div class="source-actions">
+                  <a id="watch-link" target="_blank" rel="noopener noreferrer" hidden>リンク元 ↗</a>
+                  <button type="button" id="copy-link" class="text-button" hidden>曲のリンクをコピー</button>
+                </div>
+              </div>
+              <p id="source-message" role="status" class="source-message"></p>
+              <button type="button" id="suggestion" class="text-button" hidden></button>
+              <details id="youtube-preview" hidden><summary>リンク元の演奏をプレビュー</summary><div id="youtube-frame"></div></details>
+              <div id="clip-panel" class="clip-panel" hidden>
+                <label for="clip-start">編曲の開始位置</label><output id="clip-time" for="clip-start"></output>
+                <input id="clip-start" type="range" min="0" value="0" step="1" aria-describedby="clip-time">
+              </div>
+            </section>
 
-        <section class="compile-panel" aria-labelledby="compile-heading">
-          <h2 id="compile-heading">編曲して聴く</h2>
-          <button type="button" id="compile" class="compile-button"><span id="compile-label">Christmas に編曲</span><svg aria-hidden="true"><use href="#icon-arrow"/></svg></button>
-          <div class="progress-row">
-            <ol class="stages" id="stages" aria-label="変換の工程">
-              <li data-step="analyzing">解析</li><li data-step="transcribing">採譜</li><li data-step="arranging">編曲</li><li data-step="rendering">音声生成</li>
-            </ol>
-            <button type="button" id="cancel" class="text-button" hidden>中止</button>
+            <details id="arrange-depth" class="depth-panel">
+              <summary id="compile-heading">編曲する</summary>
+              <div class="depth-content">
+                <section class="compile-panel" aria-labelledby="compile-heading">
+                  <button type="button" id="compile" class="compile-button"><span id="compile-label">Christmas に編曲</span><svg aria-hidden="true"><use href="#icon-arrow"/></svg></button>
+                  <div class="progress-row">
+                    <ol class="stages" id="stages" aria-label="変換の工程">
+                      <li data-step="analyzing">解析</li><li data-step="transcribing">採譜</li><li data-step="arranging">編曲</li><li data-step="rendering">音声生成</li>
+                    </ol>
+                    <button type="button" id="cancel" class="text-button" hidden>中止</button>
+                  </div>
+                  <p id="job-message" class="job-message" role="status">編曲すると、ここで聴き比べられます。</p>
+                  <details id="result" class="depth-panel result" hidden>
+                    <summary>編曲を聴く</summary>
+                    <div class="depth-content">
+                      <div class="player-head"><div class="ab-buttons" role="group" aria-label="試聴音源"><button type="button" data-mix="original" aria-pressed="false"><b>A</b> <span id="original-label">原曲</span></button><button type="button" data-mix="arranged" aria-pressed="true"><b>B</b> 編曲後</button></div><span id="player-style"></span></div>
+                      <button type="button" id="listen-result" class="text-button" hidden>▶ 編曲を再生</button>
+                      <audio id="player" controls preload="metadata" aria-label="試聴プレーヤー"></audio>
+                      <div class="downloads"><a id="wav">WAV ↓</a><a id="midi">MIDI ↓</a><a id="ir">Music IR ↓</a></div>
+                    </div>
+                  </details>
+                </section>
+              </div>
+            </details>
           </div>
-          <p id="job-message" class="job-message" role="status">編曲すると、ここで聴き比べられます。</p>
-          <div id="result" class="result" hidden>
-            <div class="player-head"><div class="ab-buttons" role="group" aria-label="試聴音源"><button type="button" data-mix="original" aria-pressed="false"><b>A</b> <span id="original-label">原曲</span></button><button type="button" data-mix="arranged" aria-pressed="true"><b>B</b> 編曲後</button></div><span id="player-style"></span></div>
-            <button type="button" id="listen-result" class="text-button" hidden>▶ 編曲を再生</button>
-            <audio id="player" controls preload="metadata" aria-label="試聴プレーヤー"></audio>
-            <div class="downloads"><a id="wav">WAV ↓</a><a id="midi">MIDI ↓</a><a id="ir">Music IR ↓</a></div>
-          </div>
-        </section>
+        </details>
       </div>
     </section>
 

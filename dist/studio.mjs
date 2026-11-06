@@ -1,12 +1,12 @@
-import { STYLES } from './music-ir.mjs';
-import { demos, suggestDemo } from './demos.mjs';
-import { getPastedUrl, resolveSource, loadAudio, loadFile, resolveCommonsAudio, sliceAudio, youtubeMetadata } from './sources.mjs?v=20261107';
+import { STYLES } from './music-ir.mjs?v=moon-1';
+import { demos, suggestDemo } from './demos.mjs?v=moon-1';
+import { getPastedUrl, resolveSource, loadAudio, loadFile, resolveCommonsAudio, sliceAudio, youtubeMetadata } from './sources.mjs?v=moon-1';
 
 const themes = {
-  christmas: ['冬の音楽郵便', 'チェレスタ、スレイベル、あたたかな弦', '収録曲'],
-  chip: ['SOUND SELECT', 'パルス波と三角波のゲーム音源', '曲を選ぶ'],
-  jazz: ['SESSION / 03', 'リード、ウォーキングベース、スウィング', 'セッション曲目'],
-  classical: ['室内楽演奏会', 'ヴァイオリン、チェロ、木管', 'プログラム'],
+  christmas: ['チェレスタ、スレイベル、あたたかな弦', '収録曲'],
+  chip: ['パルス波と三角波のゲーム音源', '曲を選ぶ'],
+  jazz: ['リード、ウォーキングベース、スウィング', 'セッション曲目'],
+  classical: ['ヴァイオリン、チェロ、木管', 'プログラム'],
 };
 const stages = ['analyzing', 'transcribing', 'arranging', 'rendering'];
 const statusText = {
@@ -84,6 +84,7 @@ function clearResult() {
   output = null;
   for (const id of ['wav', 'midi', 'ir']) $(id).removeAttribute('href');
   $('result').hidden = true;
+  $('result').open = false;
   $('listen-result').hidden = true;
 }
 
@@ -97,11 +98,10 @@ function pickStyle(style) {
     jobStatus('idle');
   }
   selectedStyle = style;
-  const [kicker, copy, heading] = themes[style];
+  const [copy, heading] = themes[style];
   document.documentElement.dataset.style = style;
   document.querySelector('meta[name="theme-color"]').content =
     getComputedStyle(document.documentElement).getPropertyValue('--nav').trim();
-  $('hero-kicker').textContent = kicker;
   $('headline').textContent = STYLES[style].label;
   $('hero-copy').textContent = copy;
   $('library-heading').textContent = heading;
@@ -249,6 +249,7 @@ function showResult(result, style, start, playOnReady) {
   $('player-style').textContent = STYLES[style].label;
   $('original-label').textContent = catalogId(source) ? '収録音源' : '入力音源';
   $('result').hidden = false;
+  $('result').open = true;
   chooseMix('arranged');
   if (playOnReady) {
     const ready = output;
@@ -264,6 +265,8 @@ function showResult(result, style, start, playOnReady) {
 async function startCompile(playOnReady = false) {
   const next = source;
   if (!canCompile(next) || run) return;
+  $('source-depth').open = true;
+  $('arrange-depth').open = true;
   clearResult();
   const style = selectedStyle;
   const started = performance.now();
@@ -307,7 +310,7 @@ async function startCompile(playOnReady = false) {
           ...(commons ? { license_ref: commonsLicense, public_source_url: next.url } : {}) }, style };
     }
     if (run !== task) return;
-    const worker = new Worker(new URL('./compiler-worker.mjs', import.meta.url), { type: 'module' });
+    const worker = new Worker(new URL('./compiler-worker.mjs?v=moon-1', import.meta.url), { type: 'module' });
     task.worker = worker;
     task.timeout = setTimeout(() => fail('編曲が時間切れになりました。短い音声で再試行してください。'), 45000);
     worker.onmessage = ({ data }) => {
@@ -348,7 +351,12 @@ for (const [index, [id, demo]] of Object.entries(demos).entries()) {
   length.className = 'track-duration';
   length.textContent = duration(demo.duration);
   button.append(number, name, length);
-  button.addEventListener('click', () => selectDemo(id));
+  button.addEventListener('click', () => {
+    selectDemo(id);
+    $('source-depth').open = true;
+    $('arrange-depth').open = true;
+    $('arrange-depth').scrollIntoView({ block: 'nearest' });
+  });
   row.append(button);
   $('track-list').append(row);
   demoButtons.set(id, button);
@@ -366,6 +374,9 @@ const youtubeExamples = [
   ['ジングルベル', 'https://music.youtube.com/watch?v=4b7dFqv94iI'],
   ['歓喜の歌', 'https://music.youtube.com/watch?v=nl3-k5GfYlw'],
   ['きらきら星', 'https://music.youtube.com/watch?v=uzu-pSlOS8w'],
+  ['グリーンスリーヴス', 'https://www.youtube.com/watch?v=B8FMRYNQ0O0'],
+  ['蛍の光', 'https://www.youtube.com/watch?v=9lht2mRd2kQ'],
+  ['アメイジング・グレイス', 'https://www.youtube.com/watch?v=KI33ItOO_M4'],
 ];
 for (const [container, examples] of [['public-examples', publicExamples], ['example-links', youtubeExamples]]) {
   for (const [label, url] of examples) {

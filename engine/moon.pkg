@@ -1,0 +1,28 @@
+import {
+  "moonbitlang/core/math",
+}
+
+options(
+  link: {
+    "wasm": {
+      "exports": [
+        "prepare_input",
+        "add_demo_note",
+        "render_demo",
+        "analyze",
+        "transcribe",
+        "arrange",
+        "render",
+        "render_original",
+        "export_midi",
+        "output_size",
+        "info",
+        "note_count",
+        "note_field",
+        "chord_count",
+        "chord_field",
+      ],
+      "export-memory-name": "memory",
+    },
+  },
+)

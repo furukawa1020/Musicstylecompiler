@@ -1,5 +1,5 @@
-import { demos, youtubeCatalog } from './demos.mjs';
-import { MAX_SECONDS } from './music-ir.mjs';
+import { demos, youtubeCatalog } from './demos.mjs?v=moon-1';
+import { MAX_SECONDS } from './music-ir.mjs?v=moon-1';
 
 const youtubeHosts = new Set(['youtube.com', 'www.youtube.com', 'm.youtube.com', 'music.youtube.com', 'youtu.be',
   'www.youtu.be', 'youtube-nocookie.com', 'www.youtube-nocookie.com']);

@@ -1,5 +1,3 @@
-import { render } from './render.mjs';
-
 const originals = {
   'winter-postcard': { title: '冬のポストカード', bpm: 102, duration: 28.24, bars: [
     [60, 64, 67, 69], [67, 64, 62, 60], [62, 65, 69, 72], [71, 67, 65, 62],
@@ -64,6 +62,15 @@ export const youtubeCatalog = {
   aFbOyqUUDik: 'jingle-bells',
   '4b7dFqv94iI': 'jingle-bells',
   SqvlTw1KZdA: 'jingle-bells',
+  RXI7KEUbSxM: 'frere-jacques',
+  B8FMRYNQ0O0: 'greensleeves',
+  '9-663i9D6OA': 'greensleeves',
+  ALaIc0RglkQ: 'greensleeves',
+  nOZsfVYxwJA: 'greensleeves',
+  KI33ItOO_M4: 'amazing-grace',
+  U0HKMgm3QGs: 'amazing-grace',
+  '9lht2mRd2kQ': 'auld-lang-syne',
+  'zg63AEw-PCg': 'auld-lang-syne',
 };
 
 const titleIndex = new Map(Object.entries({
@@ -86,7 +93,7 @@ export function suggestDemo(title) {
   return titleIndex.get(normalizeTitle(plain)) ?? null;
 }
 
-export function demoAudio(id) {
+export function demoNotes(id) {
   const demo = demos[id];
   const lead = [];
   if (demo.score) {
@@ -108,6 +115,5 @@ export function demoAudio(id) {
       }
     }
   }
-  return render({ duration_sec: demo.duration, tempo_map: [{ bpm: demo.bpm }], ticks_per_quarter: 480,
-    tracks: [{ instrument: demo.instrument ?? 'dry-piano', notes: lead }] }, { echo: false });
+  return lead;
 }
