@@ -3,9 +3,9 @@ import assert from 'node:assert/strict';
 import { createHash } from 'node:crypto';
 import { readFile } from 'node:fs/promises';
 import { createCompiler } from '../dist/compiler.mjs';
-import { demos, suggestDemo } from '../dist/demos.mjs';
+import { demos, suggestDemo, suggestRecording } from '../dist/demos.mjs';
 import { STYLES, validate } from '../dist/music-ir.mjs';
-import { getPastedUrl, loadAudio, resolveSource, resolveCommonsAudio, sliceAudio } from '../dist/sources.mjs';
+import { getPastedUrl, loadAudio, resolveSource, linkedRecording, resolveCommonsAudio, sliceAudio } from '../dist/sources.mjs';
 
 const binary = await readFile(new URL('../dist/music-compiler.wasm', import.meta.url));
 const { instance, module } = await WebAssembly.instantiate(binary);
@@ -48,7 +48,12 @@ for (const [id, demo] of Object.entries(demos)) {
         assert.deepEqual(source.tracks[0].notes.slice(0, 4).map(note => note.pitch), demo.score.slice(0, 4).map(([pitch]) => pitch));
       }
       assert.deepEqual(arrangement.tracks[0].notes.map(n => n.pitch), source.tracks[0].notes.map(n => n.pitch));
-      assert.deepEqual(arrangement.sections, source.sections);
+      assert.deepEqual(arrangement.sections, [{ kind: 'full-excerpt', start_tick: 0, end_tick: arrangement.total_ticks }]);
+      assert.ok(Math.abs(arrangement.total_ticks / arrangement.tempo_map[0].bpm * 60 / 480 - demo.duration) < .002);
+      const meter = arrangement.meter[0];
+      assert.equal(meter.numerator, style === 'christmas' ? source.meter[0].numerator * 3
+        : style === 'classical' ? 3 : source.meter[0].numerator);
+      assert.equal(meter.denominator, style === 'christmas' ? 8 : 4);
       assert.equal(arrangement.tracks[0].instrument, STYLES[style].lead);
       assert.ok(arrangement.tracks.length >= 4);
       assert.ok(arrangement.provenance.passes.length >= 4);
@@ -57,7 +62,15 @@ for (const [id, demo] of Object.entries(demos)) {
       assert.notEqual(fingerprint(result.original), fingerprint(result.arranged));
       hashes.add(fingerprint(result.arranged));
       assert.equal(decoder.decode(result.midi.slice(0, 4)), 'MThd');
-      assert.equal(new DataView(result.midi).getUint16(10), arrangement.tracks.length + 1);
+      const midi = new DataView(result.midi);
+      assert.equal(midi.getUint16(10), arrangement.tracks.length + 1);
+      assert.equal(midi.getUint8(33), meter.numerator);
+      assert.equal(2 ** midi.getUint8(34), meter.denominator);
+      assert.ok(Math.abs(60_000_000 / (midi.getUint16(26) * 256 + midi.getUint8(28)) - arrangement.tempo_map[0].bpm) < .001);
+      assert.equal(arrangement.chords[0].start_tick, 0);
+      for (const [i, chord] of arrangement.chords.entries()) {
+        assert.equal(chord.start_tick + chord.duration_ticks, arrangement.chords[i + 1]?.start_tick ?? arrangement.total_ticks);
+      }
       validate(arrangement);
       arrangement.tracks[0].notes[0].duration_ticks = 0;
       assert.throws(() => validate(arrangement), /ノート範囲/);
@@ -88,6 +101,15 @@ test('catalog, direct audio and YouTube links are classified separately', () => 
   assert.equal(linked.watchUrl, 'https://music.youtube.com/watch?v=nl3-k5GfYlw');
   assert.equal(suggestDemo('Frère Jacques (Instrumental)'), 'frere-jacques');
   assert.equal(suggestDemo('Jingle Bells Rock'), null);
+  const elise = resolveSource('https://music.youtube.com/watch?v=wfF0zHeU3Zs', base);
+  assert.equal(elise.recordingId, 'fur-elise');
+  assert.equal(elise.catalogId, null);
+  assert.equal(linkedRecording(elise.recordingId).title, 'File:FurElise.ogg');
+  assert.equal(resolveSource('https://youtu.be/DJGgcLJDCxI', base).recordingId, 'chopin-waltz');
+  assert.equal(resolveSource('https://youtu.be/ipzR9bhei_o', base).recordingId, 'bach-toccata');
+  assert.equal(suggestRecording('Beethoven – Für Elise (Piano)'), 'fur-elise');
+  assert.equal(suggestRecording('Chopin Waltz in A minor Op. 34 No. 2'), null);
+  assert.equal(suggestRecording('Bach Toccata and Fugue in D minor BWV 538'), null);
   assert.throws(() => resolveSource('https://music.youtube.com/playlist?list=1234', base), /プレイリスト/);
   assert.throws(() => resolveSource('https://r1.googlevideo.com/sample.wav', base), /YouTube/);
   assert.throws(() => resolveSource('https://www.youtube.googleapis.com/sample.wav', base), /YouTube/);
@@ -189,7 +211,17 @@ test('styles change groove, articulation and instrumentation in the Wasm score',
   const classical = melody('classical');
   assert.ok(jazz.arrangement.tracks[0].notes.some((n, i) => n.start_tick > jazz.source.tracks[0].notes[i].start_tick));
   assert.ok(chip.arrangement.tracks[0].notes.some((n, i) => n.duration_ticks < chip.source.tracks[0].notes[i].duration_ticks));
-  assert.ok(classical.arrangement.tracks[0].notes.some((n, i) => n.duration_ticks > classical.source.tracks[0].notes[i].duration_ticks));
+  assert.ok(classical.arrangement.tracks[0].notes.some((n, i) => n.duration_ticks / classical.arrangement.tempo_map[0].bpm > classical.source.tracks[0].notes[i].duration_ticks / classical.source.tempo_map[0].bpm));
   assert.ok(christmas.arrangement.tracks.find(t => t.instrument === 'sleigh').notes.length > 60);
-  assert.ok(christmas.arrangement.tracks.find(t => t.instrument === 'bell').notes.length > 12);
+  assert.ok(christmas.arrangement.tracks.find(t => t.instrument === 'bell').notes.length >= 6);
+  assert.ok(christmas.arrangement.tracks.find(t => t.instrument === 'sleigh').notes.every(n => n.start_tick % 240 === 0));
+  const tracks = chip.arrangement.tracks;
+  const byChannel = [tracks[0].notes, tracks.find(t => t.instrument === 'arp').notes,
+    tracks.find(t => t.instrument === 'triangle').notes,
+    tracks.filter(t => t.role === 'percussion').flatMap(t => t.notes)];
+  for (const notes of byChannel) {
+    notes.sort((a, b) => a.start_tick - b.start_tick);
+    assert.ok(notes.every((n, i) => i === 0 || notes[i - 1].start_tick + notes[i - 1].duration_ticks <= n.start_tick));
+  }
+  assert.ok(jazz.arrangement.chords.length > jazz.source.chords.length);
 });

@@ -73,6 +73,27 @@ export const youtubeCatalog = {
   'zg63AEw-PCg': 'auld-lang-syne',
 };
 
+// These performances come from Commons, independently of the videos.
+export const linkedRecordings = {
+  'fur-elise': { title: 'エリーゼのために', file: 'FurElise.ogg' },
+  'chopin-waltz': { title: 'ショパンのワルツ イ短調', file: 'Chopin_-_Waltz_in_A_minor,_B_150.ogg' },
+  'bach-toccata': { title: 'トッカータとフーガ ニ短調', file: 'BachToccataAndFugueInDMinorOpeningPianoHiFi.ogg' },
+};
+export const youtubeRecordings = {
+  wfF0zHeU3Zs: 'fur-elise',
+  MgFhNbFvl_s: 'fur-elise',
+  DJGgcLJDCxI: 'chopin-waltz',
+  ipzR9bhei_o: 'bach-toccata',
+};
+
+export function suggestRecording(title) {
+  const plain = title.normalize('NFKD').replace(/\p{Mark}/gu, '').toLowerCase();
+  if (/\bbeethoven\b/.test(plain) && /\bfu(?:e)?r elise\b/.test(plain)) return 'fur-elise';
+  if (/\bchopin\b/.test(plain) && /\bwaltz in a minor\b/.test(plain) && /\bb[. ]*150\b/.test(plain)) return 'chopin-waltz';
+  if (/\bbach\b/.test(plain) && /\btoccata and fugue in d minor\b/.test(plain) && !/\b538\b/.test(plain)) return 'bach-toccata';
+  return null;
+}
+
 const titleIndex = new Map(Object.entries({
   'ode-to-joy': ['Ode to Joy', '歓喜の歌', 'An die Freude'],
   twinkle: ['Twinkle Twinkle Little Star', 'きらきら星', 'Ah vous dirai je maman'],

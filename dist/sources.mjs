@@ -1,5 +1,5 @@
-import { demos, youtubeCatalog } from './demos.mjs?v=moon-1';
-import { MAX_SECONDS } from './music-ir.mjs?v=moon-1';
+import { demos, linkedRecordings, youtubeCatalog, youtubeRecordings } from './demos.mjs?v=score-2';
+import { MAX_SECONDS } from './music-ir.mjs?v=score-2';
 
 const youtubeHosts = new Set(['youtube.com', 'www.youtube.com', 'm.youtube.com', 'music.youtube.com', 'youtu.be',
   'www.youtu.be', 'youtube-nocookie.com', 'www.youtube-nocookie.com']);
@@ -35,7 +35,8 @@ export function resolveSource(value, base) {
     if (!id || !/^[\w-]{11}$/.test(id)) throw new Error('アルバムやプレイリストでは、曲を開いてから「共有」で1曲のURLをコピーしてください。');
     return { kind: 'youtube', id, url: 'https://www.youtube.com/watch?v=' + id,
       watchUrl: host === 'music.youtube.com' ? 'https://music.youtube.com/watch?v=' + id : 'https://www.youtube.com/watch?v=' + id,
-      catalogId: Object.hasOwn(youtubeCatalog, id) ? youtubeCatalog[id] : null };
+      catalogId: Object.hasOwn(youtubeCatalog, id) ? youtubeCatalog[id] : null,
+      recordingId: Object.hasOwn(youtubeRecordings, id) ? youtubeRecordings[id] : null };
   }
   if (host === 'commons.wikimedia.org' && /^\/wiki\/File(?::|%3a)/i.test(url.pathname)) {
     let title;
@@ -47,6 +48,14 @@ export function resolveSource(value, base) {
   if (/(^|\.)drive\.google\.com$/.test(host)) throw new Error('Google Driveの共有ページはこの版では読み込めません。直接再生できる音声URLか、デモ曲を選んでください。');
   if (/(^|\.)jamendo\.com$/.test(host)) throw new Error('Jamendoの曲ページはこの版では読み込めません。編曲許諾のある直接音声URLか、デモ曲を選んでください。');
   return { kind: 'audio', url: url.href, title: url.pathname.split('/').filter(Boolean).at(-1) ?? url.hostname, host };
+}
+
+export function linkedRecording(id) {
+  const recording = Object.hasOwn(linkedRecordings, id) ? linkedRecordings[id] : null;
+  if (!recording) return null;
+  const title = 'File:' + recording.file;
+  return { title, url: 'https://commons.wikimedia.org/wiki/' + encodeURIComponent(title),
+    label: recording.title };
 }
 
 export async function resolveCommonsAudio(source, signal) {

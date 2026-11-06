@@ -34,3 +34,7 @@ YouTube Musicのリンクが指す録音自体を編曲するには、解析・�
 MoonBitの通常のWasmターゲットでDSP、譜面処理、シンセ、WAV/MIDIエンコーダーを実行する。ブラウザでデコードしたPCMを線形メモリへまとめて書き込み、WAV/MIDIをまとめて取り出す。ブラウザAPIとWorkerの接続にJavaScriptを使う。
 
 [METEOR](https://www.ijcai.org/proceedings/2025/1125) の小節・トラック単位の制御と、[Unifying Symbolic Music Arrangement](https://proceedings.neurips.cc/paper_files/paper/2025/hash/15a5d4408b2bb41b9f923d724bb943f3-Abstract-Conference.html) の旋律とスタイルの分離を調査した。アプリでは学習済みモデルを配らず、同じ旋律の音程を基準に、タイミング、強弱、ボイシング、伴奏パターンをスタイル別に変更する。[Beat This!](https://github.com/CPJKU/beat_this) も調査し、混合音源の拍推定には旋律の音符間隔に加え、周波数帯ごとの音量変化を使う。和音にはPCMから測ったピッチクラス分布を加味する。結果は主旋律の推定を使うので、歌声や全パートの復元には対応しない。
+
+## スタイルごとの譜面
+
+[Structure-Aware Piano Accompaniment](https://arxiv.org/abs/2602.15074) の小節単位で伴奏の動きを計画する考え方を参考にし、拍子、和音の切り替え、各パートの役割をスタイルごとに定義した。クリスマスではベルが返答できる箇所を旋律から選び、ジャズでは旋律とぶつからない場合だけ次の和音に対するドミナントを挿入する。WAVとMIDIは同じ編曲譜面を使う。拍子を変更しても入力の区間長は保持する。[SheetSage2](https://arxiv.org/abs/2610.05336) の統合採譜も調査したが、この版はモデルのダウンロードなしで動作する既存のMoonBit採譜を使用する。

@@ -77,7 +77,7 @@ button, a, summary, input { -webkit-tap-highlight-color: transparent; }
 }
 .brand { display: inline-flex; align-items: center; gap: 10px; text-decoration: none; font-weight: 780; }
 .brand svg { width: 24px; height: 24px; flex: none; }
-.edition, .footer-inner { font-size: 11px; }
+.footer-inner { font-size: 11px; }
 .preset-bar { border-block: 1px solid color-mix(in srgb, currentColor 35%, transparent); }
 .style-buttons { display: flex; justify-content: space-between; }
 .style-buttons button {
@@ -113,7 +113,6 @@ button, a, summary, input { -webkit-tap-highlight-color: transparent; }
 }
 .intro-type { position: relative; z-index: 1; }
 .intro h1 { margin: 3px 0 0; font: 400 clamp(72px, 12vw, 168px)/.95 var(--serif); letter-spacing: -.08em; }
-.hero-copy { margin: 12px 0 0; font-size: clamp(12px, 1.5vw, 16px); font-weight: 650; }
 .hero-artwork { position: absolute; z-index: 0; right: -20px; bottom: 0; width: min(47%, 560px); pointer-events: none; }
 .hero-artwork img { display: block; width: 100%; height: auto; }
 [data-style="christmas"] .intro h1 { font-size: clamp(68px, 11vw, 155px); font-style: italic; }
@@ -123,7 +122,6 @@ button, a, summary, input { -webkit-tap-highlight-color: transparent; }
 [data-style="chip"] .hero-artwork { right: -8px; bottom: 2px; width: min(51%, 580px); }
 [data-style="chip"] .hero-artwork img { image-rendering: pixelated; }
 [data-style="jazz"] .intro h1 { font: 950 clamp(94px, 17vw, 220px)/.86 var(--ui); letter-spacing: -.11em; text-transform: uppercase; }
-[data-style="jazz"] .hero-copy { margin-top: 26px; }
 [data-style="jazz"] .hero-artwork { right: -32px; bottom: -7px; width: min(56%, 630px); }
 [data-style="classical"] .hero-body { min-height: clamp(236px, 26vw, 352px); justify-content: center; text-align: center; }
 [data-style="classical"] .intro h1 { letter-spacing: -.07em; }
@@ -285,7 +283,6 @@ audio { display: block; width: 100%; height: 42px; margin: 7px 0; }
 @media (max-width: 575px) {
   .shell { width: calc(100% - 32px); }
   .masthead-inner { min-height: 48px; }
-  .edition { display: none; }
   .style-buttons button { min-height: 41px; gap: 4px; font-size: 11px; }
   .style-buttons svg { width: 13px; height: 13px; }
   .hero-body, [data-style="chip"] .hero-body, [data-style="classical"] .hero-body {
@@ -296,10 +293,8 @@ audio { display: block; width: 100%; height: 42px; margin: 7px 0; }
     text-align: left;
   }
   .intro h1, [data-style="christmas"] .intro h1 { font-size: clamp(52px, 13vw, 74px); }
-  .hero-copy { max-width: 16rem; }
   [data-style="chip"] .intro h1 { font-size: clamp(54px, 15vw, 90px); }
   [data-style="jazz"] .intro h1 { font-size: clamp(72px, 22vw, 116px); }
-  [data-style="jazz"] .hero-copy { margin-top: 14px; }
   [data-style] .hero-artwork { right: -12px; bottom: -4px; width: 54%; opacity: .65; }
   [data-style="classical"] .hero-artwork { opacity: .45; }
   .workbench-inner { width: calc(100% - 32px); padding-block: 16px 26px; }

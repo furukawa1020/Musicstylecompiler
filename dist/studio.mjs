@@ -1,13 +1,7 @@
-import { STYLES } from './music-ir.mjs?v=moon-1';
-import { demos, suggestDemo } from './demos.mjs?v=moon-1';
-import { getPastedUrl, resolveSource, loadAudio, loadFile, resolveCommonsAudio, sliceAudio, youtubeMetadata } from './sources.mjs?v=moon-1';
+import { STYLES } from './music-ir.mjs?v=score-2';
+import { demos, suggestDemo, suggestRecording } from './demos.mjs?v=score-2';
+import { getPastedUrl, resolveSource, linkedRecording, loadAudio, loadFile, resolveCommonsAudio, sliceAudio, youtubeMetadata } from './sources.mjs?v=score-2';
 
-const themes = {
-  christmas: ['チェレスタ、スレイベル、あたたかな弦', '収録曲'],
-  chip: ['パルス波と三角波のゲーム音源', '曲を選ぶ'],
-  jazz: ['リード、ウォーキングベース、スウィング', 'セッション曲目'],
-  classical: ['ヴァイオリン、チェロ、木管', 'プログラム'],
-};
 const stages = ['analyzing', 'transcribing', 'arranging', 'rendering'];
 const statusText = {
   idle: '編曲すると、ここで原曲と聴き比べられます。',
@@ -28,7 +22,7 @@ let selectedStyle = 'christmas';
 let source = null;
 let decoded = null;
 let commonsLicense = null;
-let suggestionId = null;
+let suggestedSource = null;
 let urlTimer = null;
 let run = null;
 let metadata = null;
@@ -46,7 +40,7 @@ const duration = seconds => {
 };
 
 const catalogId = item => item?.kind === 'demo' ? item.id : item?.catalogId;
-const canCompile = item => Boolean(catalogId(item)) || item?.kind === 'audio' || item?.kind === 'commons' || item?.kind === 'file';
+const canCompile = item => Boolean(catalogId(item) || item?.recordingId) || item?.kind === 'audio' || item?.kind === 'commons' || item?.kind === 'file';
 
 function updateControls() {
   $('compile').disabled = !canCompile(source) || Boolean(run);
@@ -98,13 +92,10 @@ function pickStyle(style) {
     jobStatus('idle');
   }
   selectedStyle = style;
-  const [copy, heading] = themes[style];
   document.documentElement.dataset.style = style;
   document.querySelector('meta[name="theme-color"]').content =
     getComputedStyle(document.documentElement).getPropertyValue('--nav').trim();
   $('headline').textContent = STYLES[style].label;
-  $('hero-copy').textContent = copy;
-  $('library-heading').textContent = heading;
   $('hero-art').src = './art/' + style + '.svg';
   presetButtons.forEach(button => button.setAttribute('aria-pressed', String(button.dataset.preset === style)));
   updateControls();
@@ -136,7 +127,7 @@ function setSource(next) {
   source = next;
   decoded = null;
   commonsLicense = null;
-  suggestionId = null;
+  suggestedSource = null;
   clipStart.value = '0';
   updateClip();
   $('suggestion').hidden = true;
@@ -149,9 +140,13 @@ function setSource(next) {
   for (const [id, button] of demoButtons) button.setAttribute('aria-pressed', String(catalogId(next) === id));
 
   const demo = demos[catalogId(next)];
+  const recording = linkedRecording(next?.recordingId);
   if (demo) {
     $('track-title').textContent = demo.title;
     $('track-meta').textContent = demo.credit + ' / ' + duration(demo.duration) + ' / 収録音源';
+  } else if (recording) {
+    $('track-title').textContent = recording.label;
+    $('track-meta').textContent = 'Wikimedia Commons / 別の演奏';
   } else if (['audio', 'file', 'commons'].includes(next?.kind)) {
     let title = next.title;
     if (next.kind === 'audio') {
@@ -170,6 +165,7 @@ function setSource(next) {
     $('watch-link').href = next.watchUrl;
     $('youtube-preview').hidden = false;
     if (demo) sourceStatus('同じ曲の収録音源で編曲します。リンク先とは別の演奏です。');
+    else if (recording) sourceStatus('同じ曲のWikimedia Commons音源で編曲します。リンク先とは別の演奏です。');
     else {
       sourceStatus('このリンクで編曲に使える音源を確認できません。リンク元の試聴はできます。');
       metadata = new AbortController();
@@ -179,9 +175,12 @@ function setSource(next) {
         if (source !== next) return;
         if (title) $('track-title').textContent = title;
         $('track-meta').textContent = channel || 'YouTube / プレビュー';
-        suggestionId = title ? suggestDemo(title) : null;
-        if (suggestionId) {
-          $('suggestion').textContent = '同名の収録曲「' + demos[suggestionId].title + '」を編曲する';
+        const demoId = title ? suggestDemo(title) : null;
+        const recordingId = title ? suggestRecording(title) : null;
+        const suggestedTitle = demos[demoId]?.title ?? linkedRecording(recordingId)?.label;
+        if (suggestedTitle) {
+          suggestedSource = { ...next, catalogId: demoId, recordingId, suggested: true };
+          $('suggestion').textContent = '同じ曲の別音源「' + suggestedTitle + '」で編曲';
           $('suggestion').hidden = false;
         }
       }).catch(() => {
@@ -262,6 +261,10 @@ function showResult(result, style, start, playOnReady) {
     + ' / ' + ir.tracks[0].notes.length + '音 / ' + ((performance.now() - start) / 1000).toFixed(1) + '秒');
 }
 
+function youtubeProvenance(item) {
+  return { selected_via: item.suggested ? 'youtube-title-confirmed' : 'youtube-video-id', linked_video_id: item.id };
+}
+
 async function startCompile(playOnReady = false) {
   const next = source;
   if (!canCompile(next) || run) return;
@@ -283,16 +286,17 @@ async function startCompile(playOnReady = false) {
     let payload;
     const id = catalogId(next);
     if (id) {
-      const provenance = next.kind === 'youtube' ? { selected_via: 'youtube-video-id', linked_video_id: next.id } : {};
+      const provenance = next.kind === 'youtube' ? youtubeProvenance(next) : {};
       payload = { demo: id, source: { id, provider: 'catalog', license_ref: 'CC0-1.0', ...provenance }, style };
     } else {
       const local = next.kind === 'file';
-      const commons = next.kind === 'commons';
+      const linked = linkedRecording(next.recordingId);
+      const commons = next.kind === 'commons' ? next : linked;
       if (!decoded) {
         jobStatus('queued', local ? '端末の音声を開いています…' : 'URLから音声を読み込み中…');
         task.timeout = setTimeout(() => fail('音声の読み込みが時間切れになりました。短い音声で再試行してください。'), 24000);
         const signal = task.controller.signal;
-        const remote = commons ? await resolveCommonsAudio(next, signal) : next;
+        const remote = commons ? await resolveCommonsAudio(commons, signal) : next;
         const buffer = await (local ? loadFile(next.file, signal) : loadAudio(remote, signal));
         clearTimeout(task.timeout);
         if (run !== task) return;
@@ -307,10 +311,11 @@ async function startCompile(playOnReady = false) {
       const provider = local ? 'local-file' : commons ? 'wikimedia-commons' : 'direct-audio';
       payload = { channels: data.channels, rate: data.rate,
         source: { id: provider, provider, offset_sec: data.offset_sec,
-          ...(commons ? { license_ref: commonsLicense, public_source_url: next.url } : {}) }, style };
+          ...(commons ? { license_ref: commonsLicense, public_source_url: commons.url } : {}),
+          ...(linked ? youtubeProvenance(next) : {}) }, style };
     }
     if (run !== task) return;
-    const worker = new Worker(new URL('./compiler-worker.mjs?v=moon-1', import.meta.url), { type: 'module' });
+    const worker = new Worker(new URL('./compiler-worker.mjs?v=score-2', import.meta.url), { type: 'module' });
     task.worker = worker;
     task.timeout = setTimeout(() => fail('編曲が時間切れになりました。短い音声で再試行してください。'), 45000);
     worker.onmessage = ({ data }) => {
@@ -377,6 +382,9 @@ const youtubeExamples = [
   ['グリーンスリーヴス', 'https://www.youtube.com/watch?v=B8FMRYNQ0O0'],
   ['蛍の光', 'https://www.youtube.com/watch?v=9lht2mRd2kQ'],
   ['アメイジング・グレイス', 'https://www.youtube.com/watch?v=KI33ItOO_M4'],
+  ['エリーゼのために', 'https://music.youtube.com/watch?v=wfF0zHeU3Zs'],
+  ['ショパンのワルツ', 'https://www.youtube.com/watch?v=DJGgcLJDCxI'],
+  ['バッハのトッカータ', 'https://www.youtube.com/watch?v=ipzR9bhei_o'],
 ];
 for (const [container, examples] of [['public-examples', publicExamples], ['example-links', youtubeExamples]]) {
   for (const [label, url] of examples) {
@@ -436,10 +444,9 @@ $('copy-link').addEventListener('click', async () => {
   }
 });
 $('suggestion').addEventListener('click', () => {
-  if (!suggestionId) return;
-  selectDemo(suggestionId, false);
-  sourceStatus('同名の収録曲を選びました。演奏は収録音源です。');
-  startCompile();
+  if (!suggestedSource) return;
+  setSource(suggestedSource);
+  startCompile(true);
 });
 $('youtube-preview').addEventListener('toggle', event => {
   if (!event.target.open || source?.kind !== 'youtube' || $('youtube-frame').firstChild) return;
@@ -482,5 +489,5 @@ $('cancel').addEventListener('click', () => { stopRun(); jobStatus('canceled'); 
 
 const requestedDemo = new URL(location.href).searchParams.get('demo');
 if (requestedDemo && Object.hasOwn(demos, requestedDemo)) selectDemo(requestedDemo);
-else selectDemo('winter-postcard', false);
+else selectDemo('jingle-bells', false);
 pickStyle('christmas');

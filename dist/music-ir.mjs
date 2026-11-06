@@ -1,10 +1,10 @@
 export const TPQ = 480;
 export const MAX_SECONDS = 30;
 export const STYLES = {
-  christmas: { id: 0, label: 'Christmas', lead: 'celesta', passes: ['チェレスタとオクターブのベル', '6thを重ねる弦', '強拍と二連のスレイベル', '2小節ごとのベルの応答'] },
-  chip: { id: 1, label: '8-bit', lead: 'pulse', passes: ['短く切るパルス波の旋律', '三角波ベース', '上行・下行の高速アルペジオ', 'ノイズ打楽器'] },
-  jazz: { id: 2, label: 'Jazz', lead: 'reed', passes: ['裏拍を遅らせる旋律', '7th系コードの裏拍コンピング', 'ウォーキングベース', 'スウィングのライド'] },
-  classical: { id: 3, label: 'Classical', lead: 'violin', passes: ['強弱とレガートを付けた弦の旋律', 'チェロの低音', '木管の応答', '弦楽アンサンブルの分散和音'] },
+  christmas: { id: 0, label: 'Christmas', lead: 'celesta', passes: ['3連の拍子に組み替え', '3連のスレイベルと跳ねる低音', '旋律に答えるハンドベル', '4小節ごとの弦とプラガル進行'] },
+  chip: { id: 1, label: '8-bit', lead: 'pulse', passes: ['単音パルス2声', '三角波ベース', '高速アルペジオとブレイク', '単音打楽器のフィル'] },
+  jazz: { id: 2, label: 'Jazz', lead: 'reed', passes: ['スウィング比2対1', '条件付きのセカンダリードミナント', 'ガイドトーンとテンション', '半音でつなぐウォーキングベース'] },
+  classical: { id: 3, label: 'Classical', lead: 'violin', passes: ['3/4拍子に組み替え', 'レガートと4小節の強弱', '旋律に逆行する木管', 'チェロ・内声のワルツ伴奏'] },
 };
 export function validate(ir) {
   if (!Number.isInteger(ir.total_ticks) || ir.total_ticks < 1 || !Number.isFinite(ir.duration_sec)
