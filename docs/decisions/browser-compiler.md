@@ -29,3 +29,8 @@ YouTubeの登録例は[ジングルベル](https://www.youtube.com/watch?v=4b7dF
 ヘッダー、イラスト、作業欄、曲目表、フッターを全幅にし、スタイルごとの3色で塗り分ける。入力、進行、曲目は同じ色面上に組み、囲いは設けない。モバイルでは作業欄を一列にする。
 
 YouTube Musicのリンクが指す録音自体を編曲するには、解析・編曲・出力に使える同じ録音の供給元と、動画IDを供給元の録音識別子に照合する情報が必要。公開の [YouTube Data API](https://developers.google.com/youtube/v3/docs/videos) と [埋め込みプレーヤーAPI](https://developers.google.com/youtube/iframe_api_reference) はこの音声供給元として使えない。実装の着手条件を [Issue #7](https://github.com/furukawa1020/Musicstylecompiler/issues/7) に記録した。
+
+
+MoonBitの通常のWasmターゲットでDSP、譜面処理、シンセ、WAV/MIDIエンコーダーを実行する。ブラウザでデコードしたPCMを線形メモリへまとめて書き込み、WAV/MIDIをまとめて取り出す。ブラウザAPIとWorkerの接続にJavaScriptを使う。
+
+[METEOR](https://www.ijcai.org/proceedings/2025/1125) の小節・トラック単位の制御と、[Unifying Symbolic Music Arrangement](https://proceedings.neurips.cc/paper_files/paper/2025/hash/15a5d4408b2bb41b9f923d724bb943f3-Abstract-Conference.html) の旋律とスタイルの分離を調査した。アプリでは学習済みモデルを配らず、同じ旋律の音程を基準に、タイミング、強弱、ボイシング、伴奏パターンをスタイル別に変更する。[Beat This!](https://github.com/CPJKU/beat_this) も調査し、混合音源の拍推定には旋律の音符間隔に加え、周波数帯ごとの音量変化を使う。和音にはPCMから測ったピッチクラス分布を加味する。結果は主旋律の推定を使うので、歌声や全パートの復元には対応しない。
