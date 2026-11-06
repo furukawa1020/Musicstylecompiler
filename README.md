@@ -20,7 +20,7 @@ python3 -m http.server 8000 --directory dist
 
 ## YouTubeのリンク先の録音をPCで編曲する
 
-Python 3.9以上とFFmpegが必要です。yt-dlpのYouTube対応にはJavaScriptランタイムも必要になるため、Node.js 22以上を利用できます。
+Python 3.11以上、FFmpeg（ffmpegとffprobe）、Node.js 22以上が必要です。
 
 ```sh
 git clone https://github.com/furukawa1020/Musicstylecompiler.git

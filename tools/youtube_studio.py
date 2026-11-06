@@ -216,8 +216,8 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--port", type=int, default=8765)
     args = parser.parse_args()
-    if not shutil.which("ffmpeg"):
-        parser.exit(1, "ffmpeg must be installed and on PATH.\n")
+    if not all(shutil.which(tool) for tool in ("ffmpeg", "ffprobe")):
+        parser.exit(1, "ffmpeg and ffprobe must be installed and on PATH.\n")
     check = subprocess.run([sys.executable, "-m", "yt_dlp", "--version"], capture_output=True)
     if check.returncode:
         parser.exit(1, 'Install yt-dlp using python -m pip install -U "yt-dlp[default]".\n')
