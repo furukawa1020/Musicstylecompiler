@@ -1,5 +1,4 @@
 export const TPQ = 480;
-export const BAR = TPQ * 4;
 export const MAX_SECONDS = 30;
 export const STYLES = {
   christmas: { label: 'Christmas', lead: 'celesta', passes: ['チェレスタへ再配音', '3和音とadd9の弦伴奏', '拍同期のスレイベル', 'フレーズ末尾のベル'] },
@@ -41,7 +40,7 @@ function pitchAt(samples, start, rate, energy) {
   return { pitch: null, confidence: 0 };
 }
 
-export function analyze(samples, rate) {
+export function analyze(samples, rate, emphasis = false) {
   const stride = Math.max(1, Math.round(rate / 10000));
   const reduced = new Float32Array(Math.floor(samples.length / stride));
   for (let i = 0; i < reduced.length; i++) {
@@ -49,7 +48,18 @@ export function analyze(samples, rate) {
     for (let j = 0; j < stride; j++) sum += samples[i * stride + j];
     reduced[i] = sum / stride;
   }
-  const hz = rate / stride, size = Math.round(hz * .038), hop = Math.round(hz * .015);
+  const hz = rate / stride;
+  if (emphasis) {
+    const lowAlpha = 1 - Math.exp(-2 * Math.PI * 165 / hz);
+    const highAlpha = 1 - Math.exp(-2 * Math.PI * 1600 / hz);
+    let low = 0, high = 0;
+    for (let i = 0; i < reduced.length; i++) {
+      low += lowAlpha * (reduced[i] - low);
+      high += highAlpha * (reduced[i] - low - high);
+      reduced[i] = high;
+    }
+  }
+  const size = Math.round(hz * .038), hop = Math.round(hz * .015);
   const frames = [];
   let peak = 0;
   for (let start = 0; start + size + Math.ceil(hz / 73) < reduced.length; start += hop) {
@@ -65,7 +75,7 @@ export function analyze(samples, rate) {
     frame.time = (frame.start + size / 2) / hz;
     Object.assign(frame, pitch);
   }
-  return { frames, hop_sec: hop / hz, duration_sec: samples.length / rate };
+  return { frames, hop_sec: hop / hz, duration_sec: samples.length / rate, emphasis };
 }
 
 function estimateTempo(notes) {
@@ -107,11 +117,11 @@ function estimateKey(notes) {
   return { root, tonic, mode, confidence: Math.min(1, Math.max(0, score)) };
 }
 
-function chooseHarmony(notes, key, totalTicks) {
+function chooseHarmony(notes, key, totalTicks, barTicks) {
   const scale = scales[key.mode];
   const chords = [];
-  for (let start = 0; start < totalTicks; start += BAR) {
-    const local = notes.filter(n => n.start_tick < start + BAR && n.start_tick + n.duration_ticks > start);
+  for (let start = 0; start < totalTicks; start += barTicks) {
+    const local = notes.filter(n => n.start_tick < start + barTicks && n.start_tick + n.duration_ticks > start);
     const candidates = scale.map((degree, index) => {
       const root = key.root + degree;
       const third = pitchClass(scale[(index + 2) % 7] - degree);
@@ -119,22 +129,22 @@ function chooseHarmony(notes, key, totalTicks) {
       const seventh = pitchClass(scale[(index + 6) % 7] - degree);
       const quality = fifth === 6 ? 'dim' : third === 3 ? 'm' : '';
       let score = [1.15, .15, .05, .58, .65, .42, -.45][index] * TPQ;
-      if (start + BAR >= totalTicks && index === 0) score += .9 * TPQ;
+      if (start + barTicks >= totalTicks && index === 0) score += .9 * TPQ;
       for (const note of local) {
         const interval = pitchClass(note.pitch - root);
-        const overlap = Math.min(start + BAR, note.start_tick + note.duration_ticks) - Math.max(start, note.start_tick);
+        const overlap = Math.min(start + barTicks, note.start_tick + note.duration_ticks) - Math.max(start, note.start_tick);
         score += overlap * ([0, third, fifth].includes(interval) ? 1 : [1, 6, 11].includes(interval) ? -.9 : -.15);
       }
       return { root: pitchClass(root), third, fifth, seventh, symbol: names[pitchClass(root)] + quality, score };
     }).sort((a, b) => b.score - a.score);
     const { score, ...chord } = candidates[0];
-    chords.push({ ...chord, start_tick: start, duration_ticks: Math.min(BAR, totalTicks - start),
-      confidence: Math.max(0, Math.min(1, (score - candidates[1].score) / BAR)) });
+    chords.push({ ...chord, start_tick: start, duration_ticks: Math.min(barTicks, totalTicks - start),
+      confidence: Math.max(0, Math.min(1, (score - candidates[1].score) / barTicks)) });
   }
   return chords;
 }
 
-export function transcribe(analysis, source) {
+export function transcribe(analysis, source, beats) {
   const { frames, hop_sec, duration_sec } = analysis;
   const notes = [];
   for (let i = 0; i < frames.length;) {
@@ -156,13 +166,14 @@ export function transcribe(analysis, source) {
     duration_ticks: Math.min(Math.max(1, toTick(note.length)), total_ticks - toTick(note.start)), velocity: 93,
     confidence: Math.round(note.confidence * 1000) / 1000 }));
   const key = estimateKey(melody);
+  const numerator = beats ?? 4;
   const ir = {
     schema_version: '0.1', kind: 'source', source, duration_sec, total_ticks, ticks_per_quarter: TPQ,
-    tempo_map: [{ tick: 0, ...tempo }], meter: [{ tick: 0, numerator: 4, denominator: 4, assumed: true }],
+    tempo_map: [{ tick: 0, ...tempo }], meter: [{ tick: 0, numerator, denominator: 4, assumed: !beats }],
     key, sections: [{ kind: 'full-excerpt', start_tick: 0, end_tick: total_ticks }],
     tracks: [{ id: 'lead', role: 'melody', instrument: 'unknown', notes: melody }],
-    chords: chooseHarmony(melody, key, total_ticks),
-    provenance: { analyzer: 'monophonic-acf-v1', harmony: 'suggested-from-melody', voiced_fraction: voiced },
+    chords: chooseHarmony(melody, key, total_ticks, numerator * TPQ),
+    provenance: { analyzer: 'monophonic-acf-v1', melody_band_emphasis: analysis.emphasis, harmony: 'suggested-from-melody', voiced_fraction: voiced },
   };
   validate(ir);
   return ir;
@@ -194,8 +205,9 @@ export function arrange(source, style) {
   const tracks = [{ ...source.tracks[0], instrument: definition.lead,
     notes: source.tracks[0].notes.map(note => ({ ...note })) }];
   const instruments = new Map();
+  let barEnd = 0;
   const add = (instrument, pitch, start_tick, length, velocity, role = 'accompaniment') => {
-    const duration_ticks = Math.min(length, source.total_ticks - start_tick);
+    const duration_ticks = Math.min(length, barEnd - start_tick);
     if (duration_ticks < 1) return;
     if (!instruments.has(instrument)) instruments.set(instrument, { id: instrument, instrument, role, notes: [] });
     instruments.get(instrument).notes.push({ pitch, start_tick, duration_ticks, velocity });
@@ -203,11 +215,13 @@ export function arrange(source, style) {
   const beat = TPQ;
   for (const [barIndex, chord] of source.chords.entries()) {
     const bar = chord.start_tick;
+    const barTicks = source.meter[0].numerator * beat;
+    barEnd = bar + chord.duration_ticks;
     const bass = 36 + chord.root;
     const root = 48 + chord.root;
     const triad = [root, root + chord.third, root + chord.fifth];
     if (style === 'christmas') {
-      triad.forEach(p => add('strings', p, bar, BAR - 60, 45));
+      triad.forEach(p => add('strings', p, bar, barTicks - 60, 45));
       add('pizz', bass, bar, beat * 2 - 30, 70);
       add('pizz', bass + chord.fifth, bar + beat * 2, beat * 2 - 30, 59);
       for (let i = 0; i < 8; i++) {
@@ -231,8 +245,8 @@ export function arrange(source, style) {
       [bass, bass + chord.third, bass + chord.fifth, 35 + following].forEach((p, i) => add('upright', p, bar + i * beat, 407, 78));
       for (const when of [0, 480, 800, 960, 1440, 1760]) add('ride', 51, bar + when, 125, when % beat === 0 ? 56 : 38, 'percussion');
     } else {
-      add('cello', bass, bar, BAR - 30, 63);
-      add('ensemble', root + chord.third, bar, BAR - 25, 47);
+      add('cello', bass, bar, barTicks - 30, 63);
+      add('ensemble', root + chord.third, bar, barTicks - 25, 47);
       add('ensemble', root + chord.fifth, bar + beat, beat * 3 - 25, 45);
       const sequence = [0, 1, 2, 1, 0, 2, 1, 2];
       sequence.forEach((degree, i) => add('pizz', triad[degree], bar + i * beat / 2, 170, i % 2 === 0 ? 57 : 45));

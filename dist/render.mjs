@@ -8,7 +8,7 @@ const programs = {
 };
 const profiles = {
   'dry-piano': [.26, .003, .045, 0], celesta: [.24, .005, .13, 0],
-  pulse: [.15, .004, .024, 0], reed: [.23, .039, .075, 0], violin: [.24, .060, .13, 0],
+  'demo-keys': [.23, .006, .018, 0], pulse: [.15, .004, .024, 0], reed: [.23, .039, .075, 0], violin: [.24, .060, .13, 0],
   strings: [.081, .18, .24, -.32], pizz: [.13, .007, .09, -.17],
   sleigh: [.087, .004, .04, .58], 'soft-keys': [.10, .009, .13, -.46], bell: [.11, .006, .20, .42],
   arp: [.071, .003, .017, .36], triangle: [.20, .006, .035, -.13],
@@ -40,6 +40,7 @@ function oscillator(instrument, f) {
       return t => piano(t) * (.43 + .57 * Math.exp(-4 * t));
     }
     case 'celesta': return t => .73 * sin(w * t) * Math.exp(-2.5 * t) + .19 * sin(2.02 * w * t) * Math.exp(-7 * t) + .095 * sin(3.98 * w * t) * Math.exp(-13 * t);
+    case 'demo-keys':
     case 'soft-keys': return t => (.83 * sin(w * t) + .15 * sin(2 * w * t)) * Math.exp(-2.7 * t);
     case 'bell': return t => (.66 * sin(w * t) + .26 * sin(2.76 * w * t) + .07 * sin(5.4 * w * t)) * Math.exp(-6 * t);
     case 'sleigh': return t => (.49 * noise() + .22 * sin(TAU * 3291 * t) + .15 * sin(TAU * 4583 * t)) * Math.exp(-24 * t);
@@ -151,7 +152,7 @@ export function encodeMidi(ir) {
   const chunk = events => [...str('MTrk'), ...uint32(events.length + 4), ...events, 0, 255, 47, 0];
   const tempo = Math.round(60e6 / ir.tempo_map[0].bpm);
   const bytes = [...str('MThd'), ...uint32(6), ...uint16(1), ...uint16(ir.tracks.length + 1), ...uint16(ir.ticks_per_quarter),
-    ...chunk([0, 255, 81, 3, tempo >>> 16, tempo >>> 8 & 255, tempo & 255, 0, 255, 88, 4, 4, 2, 24, 8])];
+    ...chunk([0, 255, 81, 3, tempo >>> 16, tempo >>> 8 & 255, tempo & 255, 0, 255, 88, 4, ir.meter[0].numerator, 2, 24, 8])];
   for (const [index, track] of ir.tracks.entries()) {
     const percussion = track.role === 'percussion';
     const channel = percussion ? 9 : index < 9 ? index : index + 1;
