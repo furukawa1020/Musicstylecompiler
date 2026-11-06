@@ -1,11 +1,11 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="480" height="260" viewBox="0 0 480 260">
-<g stroke="#a29580" fill="none"><path d="M8 78h458M8 89h458M8 100h458M8 111h458M8 122h458M8 162h458M8 173h458M8 184h458M8 195h458M8 206h458" opacity=".65"/><path d="M22 77v46m0 38v46m431-130v46m0 38v46"/></g>
-<g transform="translate(220 12) rotate(24 27 120)" fill="#f5f1e6" stroke="#732d39" stroke-width="3">
+<g stroke="#30283e" fill="none"><path d="M8 78h458M8 89h458M8 100h458M8 111h458M8 122h458M8 162h458M8 173h458M8 184h458M8 195h458M8 206h458" opacity=".65"/><path d="M22 77v46m0 38v46m431-130v46m0 38v46"/></g>
+<g transform="translate(220 12) rotate(24 27 120)" fill="#f9edda" stroke="#763447" stroke-width="3">
 <path d="M25 73c-19-12-36 5-29 22 4 9 12 8 12 19 0 9-9 11-9 24 0 10-12 12-16 29-9 33 18 56 45 56s55-23 46-56c-5-17-17-19-17-29 0-13-9-15-9-24 0-11 9-10 13-19 7-17-11-34-30-22z"/>
 <path d="M20 81c-13-7-28 6-21 17 5 8 13 10 13 16 0 11-10 16-10 25 0 14-13 17-17 31-7 26 14 46 42 46s48-19 41-46c-4-14-17-17-17-31 0-9-10-14-10-25 0-6 8-8 13-16 7-11-8-24-21-17" stroke-width="1.3"/>
-<path d="M22 18h12v124H22zM22 166h12l5 37H17zM19 11h18v33H19zM14 21h28m-28 11h28" fill="#732d39"/>
-<path d="M13 145q-9 6-6 14m37-14q9 6 6 14M18 163h20" fill="none" stroke-width="2"/><path d="M26 31v159m4-159v159" stroke="#a98682" stroke-width="1"/>
+<path d="M22 18h12v124H22zM22 166h12l5 37H17zM19 11h18v33H19zM14 21h28m-28 11h28" fill="#763447"/>
+<path d="M13 145q-9 6-6 14m37-14q9 6 6 14M18 163h20" fill="none" stroke-width="2"/><path d="M26 31v159m4-159v159" stroke="#763447" stroke-width="1"/>
 </g>
-<path d="M151 215 352 53m-197 167L356 58" stroke="#732d39" stroke-width="2"/>
-<g fill="#732d39"><path d="M67 108q-9-2-9 4t9 0V91h2v17zm345 83q-9-2-9 4t9 0v-20h2v17zm16-7q-9-2-9 4t9 0v-20h2v17z"/><path d="m413 176 16-7v4l-16 7z"/></g>
+<path d="M151 215 352 53m-197 167L356 58" stroke="#763447" stroke-width="2"/>
+<g fill="#763447"><path d="M67 108q-9-2-9 4t9 0V91h2v17zm345 83q-9-2-9 4t9 0v-20h2v17zm16-7q-9-2-9 4t9 0v-20h2v17z"/><path d="m413 176 16-7v4l-16 7z"/></g>
 </svg>

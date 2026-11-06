@@ -4,6 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="description" content="曲をクリスマス、8-bit、ジャズ、クラシックの4つのスタイルに編曲して聴き比べる。">
+  <meta name="theme-color" content="#123e32">
   <meta name="referrer" content="strict-origin-when-cross-origin">
   <title>Music Style Compiler</title>
   <link rel="stylesheet" href="./studio.css">
@@ -23,9 +24,7 @@
       <a class="brand" href="./" aria-label="Music Style Compiler ホーム"><svg aria-hidden="true"><use href="#icon-logo"/></svg><span>Music Style Compiler</span></a>
       <span class="edition">音源はこの端末で処理</span>
     </div>
-  </header>
-  <main class="shell studio">
-    <nav class="preset-bar" aria-label="編曲スタイル">
+    <nav class="shell preset-bar" aria-label="編曲スタイル">
       <div class="style-buttons" role="group" aria-label="スタイルを選ぶ">
         <button type="button" data-preset="christmas" aria-pressed="true"><svg aria-hidden="true"><use href="#icon-christmas"/></svg><span>Christmas</span></button>
         <button type="button" data-preset="chip" aria-pressed="false"><svg aria-hidden="true"><use href="#icon-chip"/></svg><span>8-bit</span></button>
@@ -34,16 +33,21 @@
       </div>
     </nav>
 
-    <div class="layout">
-      <section class="intro" aria-labelledby="headline">
+  </header>
+  <main>
+    <section class="intro" aria-labelledby="headline">
+      <div class="shell hero-body">
         <div class="intro-type">
           <span class="hero-kicker" id="hero-kicker">冬の音楽郵便</span>
           <h1 id="headline">Christmas</h1>
           <p class="hero-copy" id="hero-copy">チェレスタ、スレイベル、あたたかな弦</p>
         </div>
-        <div class="hero-plate"><img id="hero-art" src="./art/christmas.svg" width="480" height="260" alt=""></div>
-      </section>
+        <div class="hero-artwork"><img id="hero-art" src="./art/christmas.svg" width="480" height="260" alt=""></div>
+      </div>
+    </section>
 
+    <section class="workbench" aria-label="編曲スタジオ">
+      <div class="shell workbench-inner">
       <section class="source-panel" aria-labelledby="source-heading">
         <h2 id="source-heading">曲を読み込む</h2>
         <form id="source-form">
@@ -52,7 +56,7 @@
             <input type="url" id="source-url" name="source" placeholder="https://music.youtube.com/watch?v=…" spellcheck="false" autocomplete="off" maxlength="2000" required>
             <button type="submit" class="sub-button">読込</button>
           </div>
-          <p class="hint">対応するYouTube Musicリンク、音声の直リンク、Commonsの音声ページを貼ると編曲が始まります。</p>
+          <p class="hint">対応リンクを貼ると編曲が始まります。YouTube Musicは収録音源で編曲できる曲に対応します。</p>
         </form>
         <div class="source-tools">
           <label for="audio-file" id="file-picker" class="file-picker">端末の音声を選ぶ<input id="audio-file" type="file" accept="audio/*,.mp3,.wav,.m4a,.ogg,.flac,.aac,.opus,.aif,.aiff"></label>
@@ -90,13 +94,16 @@
           <div class="downloads"><a id="wav">WAV ↓</a><a id="midi">MIDI ↓</a><a id="ir">Music IR ↓</a></div>
         </div>
       </section>
-      <section class="library" aria-labelledby="library-heading">
+      </div>
+    </section>
+
+    <section class="library" aria-labelledby="library-heading">
+      <div class="shell">
         <div class="library-head"><h2 id="library-heading">収録曲</h2><span id="track-count"></span></div>
         <ol class="track-list" id="track-list"></ol>
-      </section>
-
-    </div>
+      </div>
+    </section>
   </main>
-  <footer class="shell footer"><span>MUSIC STYLE COMPILER</span><span>ライブラリは独自演奏。YouTube音源はプレビューのみ。</span></footer>
+  <footer class="footer"><div class="shell footer-inner"><span>MUSIC STYLE COMPILER</span><span>ライブラリは独自演奏。YouTube音源はプレビューのみ。</span></div></footer>
 </body>
 </html>
