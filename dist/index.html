@@ -1,0 +1,95 @@
+<!doctype html>
+<html lang="ja" data-style="christmas">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="曲をクリスマス、8-bit、ジャズ、クラシックの4つのスタイルに編曲して聴き比べる。">
+  <meta name="referrer" content="strict-origin-when-cross-origin">
+  <title>Music Style Compiler</title>
+  <link rel="stylesheet" href="./studio.css">
+  <script type="module" src="./studio.mjs"></script>
+</head>
+<body>
+  <svg class="symbols" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+    <symbol id="icon-logo" viewBox="0 0 32 32"><path d="M2 16h5l3-8 4 17 4-23 4 25 3-11h5" fill="none" stroke="currentColor" stroke-width="2"/></symbol>
+    <symbol id="icon-christmas" viewBox="0 0 24 24"><path d="M5 17h14c-2-2-2-3-2-7a5 5 0 0 0-10 0c0 4 0 5-2 7Zm5 3a2 2 0 0 0 4 0M12 3v2" fill="none" stroke="currentColor" stroke-width="1.5"/></symbol>
+    <symbol id="icon-chip" viewBox="0 0 24 24"><path d="M6 6h12v12H6zM9 2v4m6-4v4M9 18v4m6-4v4M2 9h4m-4 6h4M18 9h4m-4 6h4M10 10h4v4h-4z" fill="none" stroke="currentColor" stroke-width="1.5"/></symbol>
+    <symbol id="icon-jazz" viewBox="0 0 24 24"><path d="M18 3h-4l-3 11c-1 4-5 3-5 0v-3H3v4c0 7 9 8 12 2l4-9-3-1m-3 3 4 2m-5 1 4 2" fill="none" stroke="currentColor" stroke-width="1.5"/></symbol>
+    <symbol id="icon-classical" viewBox="0 0 24 24"><path d="M3 8h18L12 3 3 8Zm1 12h16M5 18h14M7 10v6m5-6v6m5-6v6" fill="none" stroke="currentColor" stroke-width="1.5"/></symbol>
+    <symbol id="icon-arrow" viewBox="0 0 24 24"><path d="M4 12h15m-6-6 6 6-6 6" fill="none" stroke="currentColor" stroke-width="1.6"/></symbol>
+  </svg>
+  <header class="masthead">
+    <div class="shell masthead-inner">
+      <a class="brand" href="./" aria-label="Music Style Compiler ホーム"><svg><use href="#icon-logo"/></svg><span>Music Style Compiler</span></a>
+      <span class="edition">ARRANGEMENT STUDIO <b> / </b> VOL. 01</span>
+    </div>
+  </header>
+  <main class="shell">
+    <section class="intro" aria-labelledby="headline">
+      <div>
+        <div class="hero-label"><span id="hero-index">01 / 04</span><span id="hero-kicker">THE HOLIDAY SESSIONS</span></div>
+        <h1 id="headline">Christmas</h1>
+        <p class="hero-tagline" id="hero-tagline">いつもの曲に、冬のきらめきを。</p>
+        <p class="hero-copy" id="hero-copy">チェレスタの旋律、スレイベルの刻み、あたたかな弦。<br>街に灯りがともるようなアレンジに。</p>
+      </div>
+      <div class="hero-plate">
+        <img id="hero-art" src="./art/christmas.svg" width="480" height="260" alt="">
+        <span id="hero-caption">FIG. 01 — CELESTA &amp; SLEIGH BELLS</span>
+      </div>
+    </section>
+
+    <section class="style-section" aria-labelledby="style-title">
+      <h2 class="section-title" id="style-title"><span>01</span> スタイルを選ぶ</h2>
+      <div class="style-buttons" role="group" aria-label="アレンジスタイル">
+        <button type="button" data-preset="christmas" aria-pressed="true"><svg><use href="#icon-christmas"/></svg><span>Christmas<small>クリスマス</small></span></button>
+        <button type="button" data-preset="chip" aria-pressed="false"><svg><use href="#icon-chip"/></svg><span>8-bit<small>チップチューン</small></span></button>
+        <button type="button" data-preset="jazz" aria-pressed="false"><svg><use href="#icon-jazz"/></svg><span>Jazz<small>ジャズ</small></span></button>
+        <button type="button" data-preset="classical" aria-pressed="false"><svg><use href="#icon-classical"/></svg><span>Classical<small>クラシック</small></span></button>
+      </div>
+    </section>
+
+    <div class="workbench">
+      <section class="source-panel" aria-labelledby="source-heading">
+        <h2 class="section-title" id="source-heading"><span>02</span> 曲を入れる</h2>
+        <form id="source-form">
+          <label for="source-url">曲のURL</label>
+          <div class="url-row">
+            <input type="url" id="source-url" name="source" placeholder="https://…" spellcheck="false" autocomplete="off" maxlength="2000" required>
+            <button type="submit" class="sub-button">読み込む</button>
+          </div>
+          <p class="hint">YouTubeはプレビューに対応。編曲には許諾のある音声URLかデモ曲を使えます。</p>
+          <label id="permission-row" class="permission" hidden><input type="checkbox" id="permission"> この音源を利用・編曲する権利があります</label>
+        </form>
+        <div class="demo-row"><span>デモ曲</span><button type="button" data-demo="winter-postcard">冬のポストカード</button><button type="button" data-demo="paper-kite">紙ひこうき</button></div>
+        <div id="source-details" class="source-details" hidden>
+          <div class="source-meta"><strong id="track-title"></strong><span id="track-meta"></span></div>
+          <div class="source-actions">
+            <a id="watch-link" target="_blank" rel="noopener noreferrer" hidden>YouTube ↗</a>
+            <button type="button" id="copy-link" class="text-button" hidden>リンクをコピー</button>
+          </div>
+        </div>
+        <p id="source-message" role="status" class="source-message"></p>
+        <div id="youtube-preview" hidden></div>
+      </section>
+
+      <section class="compile-panel" aria-labelledby="compile-heading">
+        <h2 class="section-title" id="compile-heading"><span>03</span> 編曲して聴く</h2>
+        <button type="button" id="compile" class="compile-button"><span id="compile-label">Christmas に編曲</span><svg><use href="#icon-arrow"/></svg></button>
+        <div class="progress-row">
+          <ol class="stages" id="stages" aria-label="変換の工程">
+            <li data-step="analyzing">解析</li><li data-step="transcribing">採譜</li><li data-step="arranging">編曲</li><li data-step="rendering">音声生成</li>
+          </ol>
+          <button type="button" id="cancel" class="text-button" hidden>中止</button>
+        </div>
+        <p id="job-message" class="job-message" role="status">編曲すると、ここで原曲と聴き比べられます。</p>
+        <div id="result" class="result" hidden>
+          <div class="player-head"><div class="ab-buttons" role="group" aria-label="試聴音源"><button type="button" data-mix="original" aria-pressed="false"><b>A</b> 原曲</button><button type="button" data-mix="arranged" aria-pressed="true"><b>B</b> 編曲後</button></div><span id="player-style"></span></div>
+          <audio id="player" controls preload="metadata" aria-label="試聴プレーヤー"></audio>
+          <div class="downloads"><a id="wav">WAV ↓</a><a id="midi">MIDI ↓</a><a id="ir">Music IR / ログ ↓</a></div>
+        </div>
+      </section>
+    </div>
+  </main>
+  <footer class="shell footer"><span>MUSIC STYLE COMPILER / 01</span><span>音源の解析と編曲はブラウザ内で行われます。</span></footer>
+</body>
+</html>
