@@ -1,0 +1,18 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta http-equiv="refresh" content="0; url=./dist/">
+  <title>Music Style Compiler</title>
+  <script>
+    const studio = new URL('./dist/', window.location.href);
+    studio.search = window.location.search;
+    studio.hash = window.location.hash;
+    window.location.replace(studio.href);
+  </script>
+</head>
+<body>
+  <a href="./dist/">Music Style Compiler を開く</a>
+</body>
+</html>

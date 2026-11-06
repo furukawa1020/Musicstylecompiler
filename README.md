@@ -26,6 +26,6 @@ Web Workerが支配的な旋律とテンポを推定し、Music IRを作成し�
 
 Node.js 22以上で `node --test` を実行します。収録音源、ライブラリ外のPCM、旋律保持、WAV・MIDI、URL分岐と音声の切り出しを確認します。
 
-GitHubリポジトリの **Settings → Pages → Source** で **GitHub Actions** を選び、**Actions → Publish GitHub Pages → Run workflow** を実行します。その後は `main` 更新時に自動公開されます。サイトの配信対象は `dist/` のみです。
+[GitHub Pages](https://furukawa1020.github.io/Musicstylecompiler/) は既存の `main` ルート公開を使います。ルートから静的アプリの `dist/` に移動します。Pagesの公開元を将来GitHub Actionsへ変更する場合は、`Publish GitHub Pages` ワークフローで `dist/` だけを公開できます。
 
 [設計・音源・参考資料](docs/decisions/browser-compiler.md)
