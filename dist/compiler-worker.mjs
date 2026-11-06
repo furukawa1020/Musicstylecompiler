@@ -1,7 +1,7 @@
-import { createCompiler } from './compiler.mjs?v=moon-1';
+import { createCompiler } from './compiler.mjs?v=score-2';
 
 async function loadCompiler() {
-  const response = await fetch(new URL('./music-compiler.wasm?v=moon-1', import.meta.url));
+  const response = await fetch(new URL('./music-compiler.wasm?v=score-2', import.meta.url));
   if (!response.ok) throw new Error('MoonBitの編曲エンジンを取得できませんでした。');
   const { instance } = response.headers.get('content-type') === 'application/wasm'
     ? await WebAssembly.instantiateStreaming(response)

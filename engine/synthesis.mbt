@@ -37,11 +37,11 @@ fn profile(instrument : Int) -> (Double, Double, Double, Double) {
     VIOLIN => (0.24, 0.060, 0.13, 0.0)
     STRINGS => (0.081, 0.18, 0.24, -0.32)
     PIZZ => (0.13, 0.007, 0.09, -0.17)
-    SLEIGH => (0.15, 0.003, 0.09, 0.58)
+    SLEIGH => (0.24, 0.001, 0.11, 0.49)
     SOFT_KEYS => (0.10, 0.009, 0.13, -0.46)
-    BELL => (0.14, 0.003, 0.24, 0.42)
+    BELL => (0.17, 0.002, 0.28, 0.42)
     ARP => (0.071, 0.003, 0.017, 0.36)
-    TRIANGLE => (0.20, 0.006, 0.035, -0.13)
+    TRIANGLE => (0.20, 0.006, 0.012, -0.13)
     CHIP_KICK => (0.15, 0.003, 0.025, 0.0)
     CHIP_NOISE => (0.11, 0.003, 0.03, 0.23)
     JAZZ_KEYS => (0.13, 0.007, 0.11, -0.44)
@@ -67,16 +67,17 @@ fn wave(instrument : Int, f : Double, t : Double, noise : Double) -> Double {
     DEMO_KEYS | SOFT_KEYS =>
       (0.83 * tone(p) + 0.15 * tone(2.0 * p)) * @math.exp(-2.7 * t)
     BELL =>
-      (0.66 * tone(p) + 0.26 * tone(2.76 * p) + 0.07 * tone(5.4 * p)) *
-      @math.exp(-6.0 * t)
-    SLEIGH =>
-      (
-        0.32 * noise +
-        0.22 * tone(3291.0 * t) +
-        0.17 * tone(4583.0 * t) +
-        0.14 * tone(5947.0 * t)
-      ) *
-      @math.exp(-24.0 * t)
+      0.66 * tone(p) * @math.exp(-4.0 * t) +
+      0.24 * overtone(p, f, 2.76) * @math.exp(-10.0 * t) +
+      0.12 * overtone(p, f, 5.4) * @math.exp(-17.0 * t)
+    SLEIGH => {
+      let detune = 0.91 + f * 0.00009
+      0.25 * noise * @math.exp(-58.0 * t) +
+      0.23 * tone(2783.0 * detune * t) * @math.exp(-22.0 * t) +
+      0.20 * tone(3487.0 * detune * t) * @math.exp(-31.0 * t) +
+      0.17 * tone(4597.0 * detune * t) * @math.exp(-38.0 * t) +
+      0.14 * tone(6133.0 * detune * t) * @math.exp(-53.0 * t)
+    }
     PULSE =>
       0.78 * tone(p) +
       0.44 * overtone(p, f, 2.0) +
@@ -148,13 +149,13 @@ fn wave(instrument : Int, f : Double, t : Double, noise : Double) -> Double {
 ///|
 fn synthesize(
   notes : Array[Note],
-  bpm : Int,
+  bpm : Double,
   size : Int,
   echo : Bool,
 ) -> (FixedArray[Float], Double) {
   let samples = FixedArray::make(size * 2, 0.0F)
   let rate = RENDER_RATE.to_double()
-  let seconds_per_tick = 60.0 / (bpm * TPQ).to_double()
+  let seconds_per_tick = 60.0 / (bpm * TPQ.to_double())
   for note in notes {
     let (gain, attack, release, pan) = profile(note.instrument)
     let left = Double::sqrt((1.0 - pan) * 0.5)

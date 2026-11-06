@@ -1,5 +1,6 @@
 // The non-GC Wasm backend passes these borrowed arrays as linear memory
 // addresses. Globals retain the buffers until the next call replaces them.
+
 ///|
 #borrow(buffer)
 extern "wasm" fn float_address(buffer : FixedArray[Float]) -> Int = "(func (param i32) (result i32) local.get 0)"
@@ -32,6 +33,8 @@ priv struct State {
   mut beats : Int
   mut ticks : Int
   mut style : Int
+  mut groove : Groove
+  mut harmony : Array[Chord]
 }
 
 ///|
@@ -58,6 +61,8 @@ let state : State = {
   beats: 4,
   ticks: 0,
   style: 0,
+  groove: groove_for(0, 4, 108),
+  harmony: [],
 }
 
 ///|
@@ -99,7 +104,7 @@ pub fn add_demo_note(
 ///|
 pub fn render_demo(duration : Double, bpm : Int) -> Int {
   let frames = @math.ceil(duration * RENDER_RATE.to_double()).to_int()
-  let (pcm, peak) = synthesize(state.demo, bpm, frames, false)
+  let (pcm, peak) = synthesize(state.demo, bpm.to_double(), frames, false)
   state.demo = []
   state.pcm = pcm
   state.sample_count = frames
@@ -238,13 +243,16 @@ pub fn transcribe(beats : Int) -> Int {
 ///|
 pub fn arrange(style : Int) -> Unit {
   state.style = style
-  state.arranged = arrange_notes(
+  let groove = groove_for(style, state.beats, state.bpm)
+  state.groove = groove
+  let lead = shaped_lead(
     state.melody,
-    state.chords,
-    state.beats,
+    groove,
     style,
-    state.ticks,
+    map_tick(state.ticks, groove),
   )
+  state.harmony = arranged_harmony(state.chords, lead, groove, style)
+  state.arranged = arrange_notes(lead, state.harmony, groove, style)
 }
 
 ///|
@@ -252,7 +260,7 @@ pub fn render() -> Int {
   let frames = @math.ceil(state.duration * RENDER_RATE.to_double()).to_int()
   let (pcm, peak) = synthesize(
     state.arranged,
-    state.bpm,
+    state.groove.bpm,
     frames,
     state.style != 1,
   )
@@ -272,7 +280,7 @@ pub fn render_original() -> Int {
 
 ///|
 pub fn export_midi() -> Int {
-  state.output = midi(state.arranged, state.bpm, state.beats)
+  state.output = midi(state.arranged, state.groove)
   byte_address(state.output)
 }
 
@@ -293,7 +301,11 @@ pub fn info(field : Int) -> Double {
     6 => if state.minor { 1.0 } else { 0.0 }
     7 => state.key_confidence
     8 => if state.emphasis { 1.0 } else { 0.0 }
-    _ => state.voiced
+    9 => state.voiced
+    10 => state.groove.bpm
+    11 => state.groove.numerator.to_double()
+    12 => state.groove.denominator.to_double()
+    _ => map_tick(state.ticks, state.groove).to_double()
   }
 }
 
@@ -324,13 +336,21 @@ pub fn note_field(arranged : Int, index : Int, field : Int) -> Double {
 }
 
 ///|
-pub fn chord_count() -> Int {
-  state.chords.length()
+pub fn chord_count(arranged : Int) -> Int {
+  if arranged == 1 {
+    state.harmony.length()
+  } else {
+    state.chords.length()
+  }
 }
 
 ///|
-pub fn chord_field(index : Int, field : Int) -> Double {
-  let chord = state.chords[index]
+pub fn chord_field(arranged : Int, index : Int, field : Int) -> Double {
+  let chord = if arranged == 1 {
+    state.harmony[index]
+  } else {
+    state.chords[index]
+  }
   match field {
     0 => chord.root.to_double()
     1 => chord.third.to_double()

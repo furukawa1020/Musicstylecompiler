@@ -87,7 +87,7 @@ fn append_track(output : Array[Byte], track : Array[Byte]) -> Unit {
 }
 
 ///|
-fn midi(notes : Array[Note], bpm : Int, beats : Int) -> FixedArray[Byte] {
+fn midi(notes : Array[Note], groove : Groove) -> FixedArray[Byte] {
   let instruments : Array[Int] = []
   for note in notes {
     if !instruments.contains(note.instrument) {
@@ -100,15 +100,15 @@ fn midi(notes : Array[Note], bpm : Int, beats : Int) -> FixedArray[Byte] {
   push_be(output, instruments.length() + 1, 2)
   push_be(output, TPQ, 2)
   let conductor : Array[Byte] = [b'\x00', b'\xff', b'\x51', b'\x03']
-  push_be(conductor, round(60000000.0 / bpm.to_double()), 3)
+  push_be(conductor, round(60000000.0 / groove.bpm), 3)
   conductor.append([
     b'\x00',
     b'\xff',
     b'\x58',
     b'\x04',
-    beats.to_byte(),
-    b'\x02',
-    b'\x18',
+    groove.numerator.to_byte(),
+    (if groove.denominator == 8 { 3 } else { 2 }).to_byte(),
+    (if groove.denominator == 8 { 36 } else { 24 }).to_byte(),
     b'\x08',
   ])
   append_track(output, conductor)
