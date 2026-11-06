@@ -8,6 +8,11 @@ const maxBytes = 12 * 1024 * 1024;
 const maxLocalBytes = 32 * 1024 * 1024;
 const maxDuration = 8 * 60;
 
+export function getPastedUrl(value) {
+  const matches = value.match(/https?:\/\/[^\s<>"「」]+/gi);
+  return matches?.length === 1 ? matches[0] : null;
+}
+
 export function resolveSource(value, base) {
   let url;
   try { url = new URL(value); } catch { throw new Error('https:// から始まる曲のURLを入力してください。'); }

@@ -151,6 +151,10 @@ label[for="source-url"] { display: block; font-size: 12px; font-weight: 730; }
 .sub-button:hover { text-decoration: underline; }
 .hint, .source-message, .job-message { font-size: 12px; margin: 8px 0; }
 [data-error="true"] { font-weight: 800; }
+.url-examples { display: flex; flex-wrap: wrap; gap: 4px 11px; align-items: baseline; margin-top: 10px; font-size: 12px; }
+.url-examples > span { font-weight: 750; }
+#public-examples { display: flex; flex-wrap: wrap; gap: 3px 11px; }
+#listen-result { font-size: 14px; font-weight: 800; }
 .source-tools { display: flex; flex-wrap: wrap; gap: 8px 18px; align-items: baseline; margin-block: 13px; }
 .file-picker, .text-button, .source-actions a, .examples summary, #youtube-preview summary {
   font-size: 12px;

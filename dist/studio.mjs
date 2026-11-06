@@ -1,6 +1,6 @@
 import { STYLES } from './music-ir.mjs';
 import { demos, suggestDemo } from './demos.mjs';
-import { resolveSource, loadAudio, loadFile, resolveCommonsAudio, sliceAudio, youtubeMetadata } from './sources.mjs';
+import { getPastedUrl, resolveSource, loadAudio, loadFile, resolveCommonsAudio, sliceAudio, youtubeMetadata } from './sources.mjs';
 
 const themes = {
   christmas: ['冬の音楽郵便', 'チェレスタ、スレイベル、あたたかな弦', '収録曲'],
@@ -84,11 +84,13 @@ function clearResult() {
   output = null;
   for (const id of ['wav', 'midi', 'ir']) $(id).removeAttribute('href');
   $('result').hidden = true;
+  $('listen-result').hidden = true;
 }
 
 function pickStyle(style) {
   const changed = style !== selectedStyle;
-  const recompile = changed && source?.kind === 'youtube' && source.catalogId && (output || run);
+  const recompile = changed && canCompile(source) && (output || run);
+  const playOnReady = Boolean(run?.playOnReady || (output && !player.paused));
   if (changed) {
     stopRun();
     clearResult();
@@ -106,7 +108,7 @@ function pickStyle(style) {
   $('hero-art').src = './art/' + style + '.svg';
   presetButtons.forEach(button => button.setAttribute('aria-pressed', String(button.dataset.preset === style)));
   updateControls();
-  if (recompile) startCompile();
+  if (recompile) startCompile(playOnReady);
 }
 
 function sourceStatus(message = '', error = false) {
@@ -196,12 +198,12 @@ function selectDemo(id, fillInput = true) {
   setSource({ kind: 'demo', id, url });
 }
 
-function openUrl(value, autoCompile = true) {
+function openUrl(value, playOnReady = false) {
   clearTimeout(urlTimer);
   try {
     const next = resolveSource(value.trim(), location.href);
     setSource(next);
-    if (autoCompile && canCompile(next)) startCompile();
+    if (canCompile(next)) startCompile(playOnReady);
   } catch (error) {
     setSource(null);
     sourceStatus(error.message, true);
@@ -229,7 +231,7 @@ function chooseMix(next, resume = false, position = 0) {
   player.load();
 }
 
-function showResult(result, style, start) {
+function showResult(result, style, start, playOnReady) {
   clearResult();
   const file = (data, mime) => URL.createObjectURL(new Blob([data], { type: mime }));
   output = {
@@ -248,17 +250,24 @@ function showResult(result, style, start) {
   $('original-label').textContent = catalogId(source) ? '収録音源' : '入力音源';
   $('result').hidden = false;
   chooseMix('arranged');
+  if (playOnReady) {
+    const ready = output;
+    $('result').scrollIntoView({ block: 'nearest' });
+    player.play().catch(() => {
+      if (output === ready && mix === 'arranged' && player.paused) $('listen-result').hidden = false;
+    });
+  }
   jobStatus('completed', '編曲完了 / ' + duration(ir.duration_sec) + ' / ' + (bpm.confidence === 0 ? 'BPM ' : '推定BPM ') + bpm.bpm
     + ' / ' + ir.tracks[0].notes.length + '音 / ' + ((performance.now() - start) / 1000).toFixed(1) + '秒');
 }
 
-async function startCompile() {
+async function startCompile(playOnReady = false) {
   const next = source;
   if (!canCompile(next) || run) return;
   clearResult();
   const style = selectedStyle;
   const started = performance.now();
-  const task = { controller: new AbortController(), worker: null, timeout: null };
+  const task = { controller: new AbortController(), worker: null, timeout: null, playOnReady };
   run = task;
   updateControls();
   jobStatus('queued');
@@ -307,7 +316,7 @@ async function startCompile() {
       else if (data.error) fail(data.error);
       else if (data.result) {
         stopRun();
-        showResult(data.result, style, started);
+        showResult(data.result, style, started, playOnReady);
       }
     };
     worker.onerror = () => fail('編曲エンジンを起動できませんでした。ページを再読み込みしてお試しください。');
@@ -346,46 +355,62 @@ for (const [index, [id, demo]] of Object.entries(demos).entries()) {
 }
 $('track-count').textContent = Object.keys(demos).length + ' 曲';
 
-const examples = [
-  ['ジングルベル · YouTube Music', 'https://music.youtube.com/watch?v=4b7dFqv94iI'],
-  ['歓喜の歌 · YouTube Music', 'https://music.youtube.com/watch?v=nl3-k5GfYlw'],
-  ['きらきら星 · YouTube Music', 'https://music.youtube.com/watch?v=uzu-pSlOS8w'],
-  ['エリーゼのために · Wikimedia Commons', 'https://commons.wikimedia.org/wiki/File:FurElise.ogg'],
+const publicExamples = [
+  ['J-POPインスト①', 'https://carf-coder.github.io/keynata-commons/release/tracks/jpop_3piece_11001/jpop_3piece_11001.mp3'],
+  ['J-POPインスト②', 'https://carf-coder.github.io/keynata-commons/release/tracks/jpop_3piece_11310/jpop_3piece_11310.mp3'],
+  ['エリーゼのために', 'https://commons.wikimedia.org/wiki/File:FurElise.ogg'],
+  ['ショパンのワルツ', 'https://commons.wikimedia.org/wiki/File:Chopin_-_Waltz_in_A_minor,_B_150.ogg'],
+  ['バッハのトッカータ', 'https://commons.wikimedia.org/wiki/File:BachToccataAndFugueInDMinorOpeningPianoHiFi.ogg'],
 ];
-for (const [label, url] of examples) {
-  const button = document.createElement('button');
-  button.type = 'button';
-  button.className = 'text-button';
-  button.textContent = label;
-  button.addEventListener('click', () => {
-    urlInput.value = url;
-    openUrl(url);
-  });
-  $('example-links').append(button);
+const youtubeExamples = [
+  ['ジングルベル', 'https://music.youtube.com/watch?v=4b7dFqv94iI'],
+  ['歓喜の歌', 'https://music.youtube.com/watch?v=nl3-k5GfYlw'],
+  ['きらきら星', 'https://music.youtube.com/watch?v=uzu-pSlOS8w'],
+];
+for (const [container, examples] of [['public-examples', publicExamples], ['example-links', youtubeExamples]]) {
+  for (const [label, url] of examples) {
+    const button = document.createElement('button');
+    button.type = 'button';
+    button.className = 'text-button';
+    button.textContent = label;
+    button.addEventListener('click', () => {
+      urlInput.value = url;
+      openUrl(url, true);
+    });
+    $(container).append(button);
+  }
 }
 
 mixButtons.forEach(button => button.addEventListener('click', () => {
   if (mix !== button.dataset.mix) chooseMix(button.dataset.mix, !player.paused, player.currentTime);
 }));
 urlInput.addEventListener('paste', event => {
-  const value = event.clipboardData?.getData('text').trim();
-  if (!value || !/^https?:\/\/\S+$/i.test(value)) return;
+  const value = getPastedUrl(event.clipboardData?.getData('text') ?? '');
+  if (!value) return;
   event.preventDefault();
   urlInput.value = value;
-  openUrl(value);
+  openUrl(value, true);
 });
-urlInput.addEventListener('input', () => {
+urlInput.addEventListener('input', event => {
   clearTimeout(urlTimer);
   if (source) setSource(null);
   else sourceStatus();
   const value = urlInput.value.trim();
-  if (/^https:\/\/(?:music\.youtube\.com|(?:www\.|m\.)?youtube\.com|youtu\.be)\//i.test(value)) {
-    urlTimer = setTimeout(() => openUrl(value), 320);
+  if (event.inputType === 'insertFromPaste') {
+    const pasted = getPastedUrl(value);
+    if (pasted) {
+      urlInput.value = pasted;
+      openUrl(pasted, true);
+      return;
+    }
   }
+  const knownPage = /^https:\/\/(?:music\.youtube\.com|(?:www\.|m\.)?youtube\.com|youtu\.be|commons\.wikimedia\.org)\//i.test(value);
+  const audioFile = /^https?:\/\/\S+\.(?:mp3|wav|m4a|ogg|flac|aac|opus|aiff?)(?:[?#]\S*)?$/i.test(value);
+  if (knownPage || audioFile) urlTimer = setTimeout(() => openUrl(value, true), 320);
 });
 $('source-form').addEventListener('submit', event => {
   event.preventDefault();
-  openUrl(urlInput.value);
+  openUrl(urlInput.value, true);
 });
 $('copy-link').addEventListener('click', async () => {
   const url = source?.url;
@@ -437,7 +462,11 @@ clipStart.addEventListener('input', () => {
   updateClip();
   jobStatus('idle', '開始位置を変更しました。「編曲」を押すとこの範囲を処理します。');
 });
-$('compile').addEventListener('click', startCompile);
+$('listen-result').addEventListener('click', () => {
+  player.play().catch(() => {});
+});
+player.addEventListener('playing', () => { $('listen-result').hidden = true; });
+$('compile').addEventListener('click', () => startCompile());
 $('cancel').addEventListener('click', () => { stopRun(); jobStatus('canceled'); });
 
 const requestedDemo = new URL(location.href).searchParams.get('demo');

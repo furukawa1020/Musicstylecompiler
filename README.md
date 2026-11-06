@@ -1,6 +1,6 @@
 # Music Style Compiler
 
-音声から旋律を採譜し、Christmas、8-bit、Jazz、Classical に編曲するブラウザアプリ。各テーマに固有のレイアウトと選曲表があります。
+音声から旋律を採譜し、Christmas、8-bit、Jazz、Classical に編曲するブラウザアプリ。各テーマの3色でヘッダーから曲目表まで塗り分けます。
 
 ## 起動
 
@@ -11,7 +11,7 @@ python3 -m http.server 8000 --directory dist
 [localhost:8000](http://localhost:8000) を開き、スタイルと曲を選びます。出力は同じ位置でA/B試聴でき、WAV、MIDI、Music IRと処理時間を保存できます。
 
 - **YouTube Music / YouTube** — 曲の共有URLを貼り付けると、対応する動画IDでは同じ曲の収録音源を使ってすぐに編曲します。YouTubeの演奏は別の公式プレーヤーで試聴できます。未登録のIDではメタデータから同名の収録曲を提案できる場合があります。任意のYouTube音声の抽出・加工は行いません。
-- **直接音声URL** — 利用可能な音声ファイルの直リンクを貼り付けます。HTTPS、CORS対応、リダイレクトなし、最大12 MiB。曲の登録は不要です。
+- **直接音声URL** — 利用可能な音声ファイルの直リンクを貼り付けます。HTTPS、CORS対応、リダイレクトなし、最大12 MiB。曲の登録は不要です。入力欄の「公開音源で試す」には [Keynata CommonsのCC0 J-POPインスト](https://carf-coder.github.io/keynata-commons/) の直リンクもあります。
 - **Wikimedia Commons** — CC0またはパブリックドメインと表示される音声のファイルページを貼り付けます。
 - **端末内の音声** — ファイル選択またはドロップで編曲します。最大32 MiB。ファイルはブラウザから送信されません。
 - **収録曲** — 10曲の収録音源はアプリ内で合成します。個別URLは曲を選ぶとコピーできます。
