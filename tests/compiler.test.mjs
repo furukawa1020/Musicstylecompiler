@@ -4,7 +4,7 @@ import { createHash } from 'node:crypto';
 import { compile } from '../dist/compiler.mjs';
 import { demos, suggestDemo } from '../dist/demos.mjs';
 import { STYLES, analyze, validate } from '../dist/music-ir.mjs';
-import { loadAudio, resolveSource, resolveCommonsAudio, sliceAudio } from '../dist/sources.mjs';
+import { getPastedUrl, loadAudio, resolveSource, resolveCommonsAudio, sliceAudio } from '../dist/sources.mjs';
 
 const decoder = new TextDecoder();
 const fingerprint = buffer => createHash('sha256').update(Buffer.from(buffer)).digest('hex');
@@ -163,4 +163,13 @@ test('Commons resolution requires openly marked audio from the Wikimedia host', 
   } finally {
     globalThis.fetch = oldFetch;
   }
+});
+
+
+test('paste accepts a single shared URL with optional track text', () => {
+  const url = 'https://commons.wikimedia.org/wiki/File:FurElise.ogg';
+  assert.equal(getPastedUrl(url), url);
+  assert.equal(getPastedUrl('エリーゼのために\n<' + url + '>'), url);
+  assert.equal(getPastedUrl(url + '\nhttps://example.com/other.ogg'), null);
+  assert.equal(getPastedUrl('javascript:alert(1)'), null);
 });
