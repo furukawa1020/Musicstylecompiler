@@ -97,6 +97,8 @@ function pickStyle(style) {
   selectedStyle = style;
   const [kicker, copy, heading] = themes[style];
   document.documentElement.dataset.style = style;
+  document.querySelector('meta[name="theme-color"]').content =
+    getComputedStyle(document.documentElement).getPropertyValue('--nav').trim();
   $('hero-kicker').textContent = kicker;
   $('headline').textContent = STYLES[style].label;
   $('hero-copy').textContent = copy;

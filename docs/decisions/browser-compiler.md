@@ -24,3 +24,8 @@ YouTubeは[公式埋め込み](https://developers.google.com/youtube/iframe_api_
 [ジングルベルの歴史的譜面](https://www.loc.gov/item/2023838067/) · [ベートーヴェン《交響曲第九番》](https://imslp.org/wiki/Symphony_No.9,_Op.125_(Beethoven,_Ludwig_van)) · [モーツァルト《ああ、お母さん聞いて》変奏曲](https://imslp.org/wiki/Ah!_vous_dirai-je,_maman_(Mozart,_Wolfgang_Amadeus))
 
 YouTubeの登録例は[ジングルベル](https://www.youtube.com/watch?v=4b7dFqv94iI)、[歓喜の歌](https://www.youtube.com/watch?v=nl3-k5GfYlw)、[きらきら星](https://www.youtube.com/watch?v=uzu-pSlOS8w)。これらの録音を取り込まず、同一楽曲の収録音源を入力に使用する。
+
+
+ヘッダー、イラスト、作業欄、曲目表、フッターを全幅にし、スタイルごとの3色で塗り分ける。入力、進行、曲目は同じ色面上に組み、囲いは設けない。モバイルでは作業欄を一列にする。
+
+YouTube Musicのリンクが指す録音自体を編曲するには、解析・編曲・出力に使える同じ録音の供給元と、動画IDを供給元の録音識別子に照合する情報が必要。公開の [YouTube Data API](https://developers.google.com/youtube/v3/docs/videos) と [埋め込みプレーヤーAPI](https://developers.google.com/youtube/iframe_api_reference) はこの音声供給元として使えない。実装の着手条件を [Issue #7](https://github.com/furukawa1020/Musicstylecompiler/issues/7) に記録した。
